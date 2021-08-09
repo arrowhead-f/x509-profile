@@ -19,8 +19,6 @@ It describes both the certificates of Certificate Authorities (CAs) and certific
 
 ### 2.2 Organization
 
-### 2.2.1 Manufacturer
-
 ### 2.3 Gateway
 
 ### 2.4 Local Cloud
@@ -33,6 +31,12 @@ It describes both the certificates of Certificate Authorities (CAs) and certific
 
 ### 2.8 Operator
 
-## 3. Algorithms, Key Lengths and Other Security Issues
+### 2.9 Manufacturer
+
+### 2.10 Transfer
+
+## 3. Algorithms, Key Lengths and Other Security Details
+
+## 4. Certificate Creation and Distribution
 
 ## References
