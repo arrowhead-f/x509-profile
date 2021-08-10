@@ -39,4 +39,6 @@ It describes both the certificates of Certificate Authorities (CAs) and certific
 
 ## 4. Certificate Creation and Distribution
 
+## 5. DNS Support and Security Implications
+
 ## References
