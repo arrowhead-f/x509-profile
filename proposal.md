@@ -40,10 +40,10 @@ Any suitable RFC 5280 certificate, or none at all.
 
 #### Extensions
 
-| Extension        | Critical | Value |
-|:-----------------|:---------|:------|
-| BasicConstraints | Yes      | `cA: true, pathLenConstraint: 2` |
-| KeyUsage         | Yes      | `keyCertSign, cRLSign` |
+| Extension        | OID         | Critical | Value |
+|:-----------------|:------------|:---------|:------|
+| BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 2` |
+| KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
 
 ### 2.2 Gate
 
@@ -61,12 +61,12 @@ A _Master_ certificate.
 
 #### Extensions
 
-| Extension               | Critical | Value |
-|:------------------------|:---------|:------|
-| BasicConstraints        | Yes      | `cA: false` |
-| KeyUsage                | Yes      | `digitalSignature, keyEncipherment` |
-| ExtendedKeyUsage        | Yes      | `serverAuth, clientAuth` |
-| SubjectAlternativeNames | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
+| Extension               | OID         | Critical | Value |
+|:------------------------|:------------|:---------|:------|
+| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
+| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
 ### 2.3 Organization
 
@@ -84,10 +84,10 @@ A _Master_ certificate.
 
 #### Extensions
 
-| Extension        | Critical | Value |
-|:-----------------|:---------|:------|
-| BasicConstraints | Yes      | `cA: true, pathLenConstraint: 1` |
-| KeyUsage         | Yes      | `keyCertSign, cRLSign` |
+| Extension        | OID         | Critical | Value |
+|:-----------------|:------------|:---------|:------|
+| BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 1` |
+| KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
 
 ### 2.4 Local Cloud
 
@@ -104,10 +104,10 @@ An _Organization_ certificate.
 
 #### Extensions
 
-| Extension        | Critical | Value |
-|:-----------------|:---------|:------|
-| BasicConstraints | Yes      | `cA: true, pathLenConstraint: 0` |
-| KeyUsage         | Yes      | `keyCertSign, cRLSign` |
+| Extension        | OID         | Critical | Value |
+|:-----------------|:------------|:---------|:------|
+| BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 0` |
+| KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
 
 ### 2.5 On-Boarding
 
@@ -124,12 +124,12 @@ A _Local Cloud_ certificate.
 
 #### Extensions
 
-| Extension               | Critical | Value |
-|:------------------------|:---------|:------|
-| BasicConstraints        | Yes      | `cA: false` |
-| KeyUsage                | Yes      | `digitalSignature, keyEncipherment` |
-| ExtendedKeyUsage        | Yes      | `serverAuth, clientAuth` |
-| SubjectAlternativeNames | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
+| Extension               | OID         | Critical | Value |
+|:------------------------|:------------|:---------|:------|
+| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
+| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
 ### 2.6 Device
 
@@ -146,12 +146,12 @@ A _Local Cloud_ certificate.
 
 #### Extensions
 
-| Extension               | Critical | Value |
-|:------------------------|:---------|:------|
-| BasicConstraints        | Yes      | `cA: false` |
-| KeyUsage                | Yes      | `digitalSignature, keyEncipherment` |
-| ExtendedKeyUsage        | Yes      | `serverAuth, clientAuth` |
-| SubjectAlternativeNames | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
+| Extension               | OID         | Critical | Value |
+|:------------------------|:------------|:---------|:------|
+| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
+| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
 ### 2.7 System
 
@@ -169,12 +169,12 @@ A _Local Cloud_ certificate.
 
 #### Extensions
 
-| Extension               | Critical | Value |
-|:------------------------|:---------|:------|
-| BasicConstraints        | Yes      | `cA: false` |
-| KeyUsage                | Yes      | `digitalSignature, keyEncipherment` |
-| ExtendedKeyUsage        | Yes      | `serverAuth, clientAuth` |
-| SubjectAlternativeNames | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
+| Extension               | OID         | Critical | Value |
+|:------------------------|:------------|:---------|:------|
+| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
+| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
 ### 2.8 Operator
 
@@ -191,11 +191,11 @@ A _Local Cloud_ certificate.
 
 #### Extensions
 
-| Extension               | Critical | Value |
-|:------------------------|:---------|:------|
-| BasicConstraints        | Yes      | `cA: false` |
-| KeyUsage                | Yes      | `digitalSignature, keyEncipherment` |
-| ExtendedKeyUsage        | Yes      | `serverAuth, clientAuth` |
+| Extension               | OID         | Critical | Value |
+|:------------------------|:------------|:---------|:------|
+| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
+| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 
 ### 2.9 Manufacturer
 
