@@ -2,8 +2,8 @@
 
 ## Abstract
 
-This document specifies how X.509 certificates should be configured and issued to facilitate secure communication and identification within local clouds of Eclipse Arrowhead.
-It describes both the certificates of Certificate Authorities (CAs) and certificate users, as well as making recommendations regarding the creation and distribution of Arrowhead certificates.
+This document specifies how X.509 certificates must be configured and issued to facilitate secure communication and identification within Eclipse Arrowhead local clouds.
+It describes the certificates of Certificate Authorities (CAs) and end entities, relevant certificate security details, recommended procedures for the creation and distribution of certificates, as well as how DNS overlaps with X.509 in the context of Arrowhead.
 
 ## 1. Introduction
 
