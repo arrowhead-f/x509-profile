@@ -215,4 +215,13 @@ A _Manufacturer_ certificate.
 
 ## 5. DNS Support and Security Implications
 
+## 6. Known Limitations
+
+### Subject Alternative Names and Device Mobility
+
+Devices and systems are assumed not to change IP addresses or DNS names during their lifetimes, as these are recorded in their certificates.
+This makes it a bit more challenging when devices need to move between networks and, as a consequence, may be assigned new IP addresses.
+However, as mobility at a scale that makes this setup a problem are currently deemed of marginal utility, no provisions are given for it directly.
+It could be working around by using proxies, negotiating a new certificate every network handover, recording all relevant IP addresses in advance in each certificate, and so on.
+
 ## References
