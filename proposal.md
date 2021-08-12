@@ -11,9 +11,73 @@ It describes the certificates of Certificate Authorities (CAs) and end entities,
 
 ### 1.2 Relation to the IETF RFC 5280 X.509 Profile
 
-### 1.3 Conventions
+### 1.3 Significant Terminology
 
-## 2. Arrowhead X.509 Profiles
+| Term | Definition |
+|:-----|:-----------|
+| Arrowhead | |
+| CA   | Certificate Authority, which may issue (sign) other certificates to endorse their validity. |
+| Intermediary | |
+| End Entity   | |
+| Local Cloud  | |
+
+### 1.4 Conventions
+
+## 2. Arrowhead X.509 Profile Categories
+
+```asn1
+TBSCertificate  ::=  SEQUENCE  {
+    version         [0]  EXPLICIT Version DEFAULT v1,        -- Must be v3(2)
+    serialNumber         CertificateSerialNumber,            -- Should (must?) be cryto rand number
+    signature            AlgorithmIdentifier,                -- Must be trusted crypto
+    issuer               Name,                               -- Taken from issuer cert
+    validity             Validity,
+    subject              Name,
+    subjectPublicKeyInfo SubjectPublicKeyInfo,               -- Must be trusted crypto
+    issuerUniqueID  [1]  IMPLICIT UniqueIdentifier OPTIONAL, -- Must NOT be used
+    subjectUniqueID [2]  IMPLICIT UniqueIdentifier OPTIONAL, -- Must NOT be used
+    extensions      [3]  EXPLICIT Extensions OPTIONAL
+}
+```
+
+Prefer `PrintableString` in `Name`s; `UTF8String` also OK.
+
+### 2.1 CA Certificates
+
+#### 2.1.1 Validity
+
+TODO: Write something about sensible validity periods for certs.
+
+#### 2.1.2 Subject
+
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | _Identifier_ specified for each profile. | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of certificate. |
+
+#### 2.1.3 Extensions
+
+| Extension        | OID         | Critical | Value |
+|:-----------------|:------------|:---------|:------|
+| BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: n*` |
+| KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
+
+* each profile specifies its own `n`.
+
+### 2.2 End Entity Certificates
+
+#### 2.2.1 Validity
+
+TODO: Write something about sensible validity periods for certs.
+
+#### 2.2.2 Subject
+
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | _Identifier_ specified for each profile. | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
 
 __Entity naming__.
 Some end entity certificates, as mentioned in their respective profile sections, must contain a subject Common Name (CN) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
@@ -24,32 +88,43 @@ This means that full domain names are _not_ allowed as subject CN, such as `my-d
 In the case of that example, it should rather have been `my-device`.
 Full domain names are specified as subject alternative names where relevant.
 
-### 2.1 Master
+#### 2.2.3 Extensions
 
-#### Issuer
+| Extension               | OID         | Critical | Value |
+|:------------------------|:------------|:---------|:------|
+| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
-Any suitable RFC 5280 certificate, or none at all.
+### 2.3 Transfer Certificates
 
-#### Subject
+## 3. Arrowhead X.509 Profiles
+
+### 3.1 Master
+
+#### 3.1.1 Issuer
+
+Issued by any suitable RFC 5280 certificate, or none at all (self-signed).
+
+#### 3.1.2 Validity
+
+#### 3.1.3 Subject
 
 | RDN               | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
-| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | `master` | 
-| Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of certificate. |
 
-#### Extensions
+#### 2.1.3 Extensions
 
 | Extension        | OID         | Critical | Value |
 |:-----------------|:------------|:---------|:------|
 | BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 2` |
-| KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
 
-### 2.2 Gate
+### 3.2 Gate
 
-#### Issuer
 
-A _Master_ certificate.
+
+Issued by a _Master_ certificate.
 
 #### Subject
 
@@ -67,7 +142,7 @@ A _Master_ certificate.
 | ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
-### 2.3 Organization
+### 3.3 Organization
 
 #### Issuer
 
@@ -88,7 +163,7 @@ A _Master_ certificate.
 | BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 1` |
 | KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
 
-### 2.4 Local Cloud
+### 3.4 Local Cloud
 
 #### Issuer
 
@@ -108,7 +183,7 @@ An _Organization_ certificate.
 | BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 0` |
 | KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
 
-### 2.5 On-Boarding
+### 3.5 On-Boarding
 
 #### Issuer
 
@@ -129,7 +204,7 @@ A _Local Cloud_ certificate.
 | ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
-### 2.6 Device
+### 3.6 Device
 
 #### Issuer
 
@@ -150,7 +225,7 @@ A _Local Cloud_ certificate.
 | ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
-### 2.7 System
+### 3.7 System
 
 #### Issuer
 
@@ -172,7 +247,7 @@ A _Local Cloud_ certificate.
 | ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
-### 2.8 Operator
+### 3.8 Operator
 
 #### Issuer
 
@@ -193,27 +268,27 @@ A _Local Cloud_ certificate.
 | ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the devices from which the operator administers its local cloud. |
 
-### 2.9 Manufacturer
+### 3.9 Manufacturer
 
 #### Issuer
 
 Any or none at all.
 
-### 2.10 Transfer
+### 3.10 Transfer
 
 #### Issuer
 
 A _Manufacturer_ certificate.
 
-## 3. Algorithms, Key Lengths and Other Security Details
+## 4. Algorithms, Key Lengths and Other Security Details
 
-## 4. Certificate Creation and Distribution
+## 5. Certificate Creation and Distribution
 
-## 5. DNS Support and Security Implications
+## 6. DNS Support and Security Implications
 
-## 6. Known Limitations
+## 7. Known Limitations
 
-### Subject Alternative Names and Device Mobility
+### 7.1 Subject Alternative Names and Device Mobility
 
 Devices and systems are assumed not to change IP addresses or DNS names during their lifetimes, as these are recorded in their certificates.
 This makes it a bit more challenging when devices need to move between networks and, as a consequence, may be assigned new IP addresses.
