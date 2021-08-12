@@ -32,11 +32,11 @@ Any suitable RFC 5280 certificate, or none at all.
 
 #### Subject
 
-| RDN                | OID        | Required | Value |
-|:-------------------|:-----------|:---------|:------|
-| Organization (O)   | `2.5.4.6`  | No       | Human-readable name of owning organization. |
-| DN Qualifier (DNQ) | `2.5.4.46` | Yes      | `master` | 
-| Common Name (CN)   | `2.5.4.3`  | Yes      | Human-readable name of certificate. |
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | `master` | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of certificate. |
 
 #### Extensions
 
@@ -53,19 +53,18 @@ A _Master_ certificate.
 
 #### Subject
 
-| RDN                | OID        | Required | Value |
-|:-------------------|:-----------|:---------|:------|
-| Organization (O)   | `2.5.4.6`  | No       | Human-readable name of owning organization. |
-| DN Qualifier (DNQ) | `2.5.4.46` | Yes      | `gate` | 
-| Common Name (CN)   | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | `gate` | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
 
 #### Extensions
 
 | Extension               | OID         | Critical | Value |
 |:------------------------|:------------|:---------|:------|
-| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
 | KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
-| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
 ### 2.3 Organization
@@ -76,11 +75,11 @@ A _Master_ certificate.
 
 #### Subject
 
-| RDN                | OID        | Required | Value |
-|:-------------------|:-----------|:---------|:------|
-| Organization (O)   | `2.5.4.6`  | No       | Human-readable name of owning organization. |
-| DN Qualifier (DNQ) | `2.5.4.46` | Yes      | `organization` | 
-| Common Name (CN)   | `2.5.4.3`  | Yes      | Human-readable name of certificate. |
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | `organization` | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of certificate. |
 
 #### Extensions
 
@@ -97,10 +96,10 @@ An _Organization_ certificate.
 
 #### Subject
 
-| RDN                | OID        | Required | Value |
-|:-------------------|:-----------|:---------|:------|
-| DN Qualifier (DNQ) | `2.5.4.46` | Yes      | `localcloud` | 
-| Common Name (CN)   | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | `localcloud` | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
 
 #### Extensions
 
@@ -117,18 +116,17 @@ A _Local Cloud_ certificate.
 
 #### Subject
 
-| RDN                | OID        | Required | Value |
-|:-------------------|:-----------|:---------|:------|
-| DN Qualifier (DNQ) | `2.5.4.46` | Yes      | `onboarding` | 
-| Common Name (CN)   | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | `onboarding` | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
 
 #### Extensions
 
 | Extension               | OID         | Critical | Value |
 |:------------------------|:------------|:---------|:------|
-| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
 | KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
-| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
 ### 2.6 Device
@@ -139,18 +137,17 @@ A _Local Cloud_ certificate.
 
 #### Subject
 
-| RDN                | OID        | Required | Value |
-|:-------------------|:-----------|:---------|:------|
-| DN Qualifier (DNQ) | `2.5.4.46` | Yes      | `device` | 
-| Common Name (CN)   | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | `device` | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
 
 #### Extensions
 
 | Extension               | OID         | Critical | Value |
 |:------------------------|:------------|:---------|:------|
-| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
 | KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
-| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
 ### 2.7 System
@@ -161,19 +158,18 @@ A _Local Cloud_ certificate.
 
 #### Subject
 
-| RDN                | OID        | Required | Value |
-|:-------------------|:-----------|:---------|:------|
-| Organization (O)   | `2.5.4.6`  | No       | Human-readable name of owning organization. |
-| DN Qualifier (DNQ) | `2.5.4.46` | Yes      | `system` | 
-| Common Name (CN)   | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | `system` | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
 
 #### Extensions
 
 | Extension               | OID         | Critical | Value |
 |:------------------------|:------------|:---------|:------|
-| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
 | KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
-| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
 | SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
 
 ### 2.8 Operator
@@ -184,18 +180,18 @@ A _Local Cloud_ certificate.
 
 #### Subject
 
-| RDN                | OID        | Required | Value |
-|:-------------------|:-----------|:---------|:------|
-| DN Qualifier (DNQ) | `2.5.4.46` | Yes      | `operator` | 
-| Common Name (CN)   | `2.5.4.3`  | Yes      | Human-readable name of operator. |
+| RDN               | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | `operator` | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of operator. |
 
 #### Extensions
 
 | Extension               | OID         | Critical | Value |
 |:------------------------|:------------|:---------|:------|
-| BasicConstraints        | `2.5.29.19` | Yes      | `cA: false` |
 | KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
-| ExtendedKeyUsage        | `2.5.29.37` | Yes      | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the devices from which the operator administers its local cloud. |
 
 ### 2.9 Manufacturer
 
