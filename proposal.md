@@ -41,29 +41,33 @@ Certificate standard for establishing trust between devices over untrusted compu
 - __End Entity__: Entity having but not issuing certificates.
 - __Entity__: Any thing or being potentially able to hold and use an X.509 certificate.
 - __Intermediary CA__: CA that _did not_ issue its own certificate and, therefore, can be trusted by explicitly trusting another certificate further up its issuance hierarchy.
+- __Issuer__: The CA that signed a given certificate.
+- __Public Key Infrastructure (PKI)__: The structure of entities, each having a certain role, required to facilitate secure certificate distribution.
 - __Root CA__: CA that _did_ issue (self-sign) its own certificate and, therefore, must be explicitly trusted.
-- __Trust Anchor__: Another name for CA.
+- __Subject__: The entity owning and being described by a given certificate.
+- __Trust Anchor__: Another name for _Root CA_.
 
 #### 1.2.3 X.501
 
 Naming schema for X.500 directories.
-The standard is relevant as it is used to name X.509 certificates.
+The standard is used to name X.509 certificates.
 
-- __Distinguished Name (DN)__: A hierarchical naming format composed consisting of RDNs. An example of a DN could be `O=My Company,CN=Robert Robertson+E=robert@mail.com`. The `O` RDN is at the highest hierarchical level, while the `CN+E` RDN is at the level below it. `,` is used to delimit the pairs.
+- __Distinguished Name (DN)__: A hierarchical naming format composed consisting of RDNs. An example of a DN could be `O=My Company,CN=Robert Robertson+E=robert@mail.com`. The `O` RDN is at the highest hierarchical level, while the `CN+E` RDN is at the level below it. The comma character `,` is used to delimit the RDNs.
 - __Relative Distinguished Name (RDN)__: A list of attribute/value pairs belonging to the same hierarchical level in a DN. Examples of RDNs could be `O=My Company` and `CN=Robert Robertson+E=robert@mail.com`. The first RDN consists of a single pair while the second consists of two delimited by `+`.
 
 #### 1.2.4 ASN.1
 
-Interface description language for describing messages that can be sent or received over a computer network.
-The standard is relevant as it is used to describe the structure of X.509 certificates.
+Interface description language for describing messages that can be sent or received over computer networks using several associated encodings.
+The standard is used to describe the structure of X.509 certificates, which must be encoded using ASN.1 DER, as defined below.
 
-- __Basic Encoding Rules (BER)__: Binary ASN.1 encoding that appends type and length information to each encoded value, which means that decoding a given message does not require knowledge of its original ASN.1 schema.
-- __Distinguished Encoding Rules (DER)__: A subset of BER that guarantees canonical representation. Must be used when encoding X.509 certificates.
+- __Basic Encoding Rules (BER)__: Binary ASN.1 encoding that appends basic type and length information to each encoded value, which means that decoding a given message does not require knowledge of its original ASN.1 description. Defined in X.690.
+- __Distinguished Encoding Rules (DER)__: A subset of BER that guarantees canonical representation, which is to say that every pair of structurally equivalent ASN.1 messages can be represented in DER in exactly one way. Must be used when encoding X.509 certificates. Defined in X.690.
+- __Object Identifier (OID)__: A structured universally unique identifier, useful for identifying parts of ASN.1 messages.
 
 ### 1.3 Conventions
 
-The words _must_, _must not_, _required_, _shall_, _shall not_, _should_, _should not_, _recommended_, _may_, and _optional_ in this document are to be interpreted as described in IETF RFC 2119.
-In short, this means that _must_, _required_ and _shall_ denote absolute requirements; _must not_ and _shall not_ denote absolute prohibitions; _should_, _should not_ and _recommended_ denote recommendations; and, finally, _may_ and _optional_ denote the subject of concern being truly optional.
+The words __must__, __must not__, __required__, __shall__, __shall not__, __should__, __should not__, __recommended__, __may__, and __optional__ in this document are to be interpreted as described in IETF RFC 2119.
+In short, this means that __must__, __required__ and __shall__ denote absolute requirements; __must not__ and __shall not__ denote absolute prohibitions; __should__, __should not__ and __recommended__ denote recommendations; and, finally, __may__ and __optional__ denote the subject of concern being truly optional.
 
 ## 2. Certificate Profiles
 
@@ -143,15 +147,12 @@ Note that the number is signed and must be positive, which means that the most s
 
 #### 2.1.2.3 `signature`
 
-The cryptographic signature algorithm used to produce `signatureValue` of `Certificate` and any parameters made relevant by the algorithm type.
-Examples of algorithms could be _RSA with SHA256_ or _ED25519_.
-
 This field must contain the same algorithm as the `signatureAlorithm` field in the `Certificate`, as described in Section 2.1.1.2.
 
 #### 2.1.2.4 `issuer`
 
 The DN of the issuer of the certificate in question.
-More specifically, this field contains a copy of the `subject` field of Section 2.1.2.6 from the issuer's certificate.
+More specifically, this field contains an exact copy of the `subject` field of Section 2.1.2.6 from the certificate of its issuer.
 
 #### 2.1.2.5 `validity`
 
@@ -174,6 +175,9 @@ For each of these two dates, the date in question _must_ be encoded as a `UTCTim
 More details about the validity format may be read in Section 4.1.2.5 of RFC 5280.
 
 #### 2.1.2.6 `subject`
+
+The DN used to describe the owner of the certificate.
+The field is defined as follows:
 
 ```asn1
 Name ::= CHOICE {
@@ -204,7 +208,37 @@ DirectoryString ::= CHOICE {
 }
 ```
 
+The below `AttributeType`s must be supported, in the sense that their OIDs are known to be associated with values of type `DirectoryString`, as defined above.
+
+| Attribute Type               | Abbreviation | OID |
+|:-----------------------------|:-------------|:----|
+| Common Name                  | `CN`         | `2.5.4.3`
+| Country                      | `C`          | `2.5.4.6` 
+| Distinguished Name Qualifier | `DN`         | `2.5.4.46`
+| Domain Component             | `DC`         | `0.9.2342.19200300.100.1.25`
+| Organization                 | `O`          | `2.5.4.10`
+| Organizational Unit          | `OU`         | `2.5.4.11`
+| Serial Number                | `SN`         | `2.5.4.5`
+| State or Province Name       | `ST`         | `2.5.4.8`
+
+In contrast to RFC 5280, we _require_ always that each `AttributeValue` associated with any type of this list is concretely represented as a `PrintableString` or a `UTF8String`.
+The former is preferred when its limited character set is sufficient.
+See RFC 5280 Section 4.1.2.4 for more attributes that _should_ be supported.
+
+__Precedence__.
+Being _hierarchical_, a DN describes a path from some arbitrary root to the subject or issuer in question, where the root is the leftmost RDN and the subject or issuer is the rightmost.
+The root does not have to be associated with the Root CA of the certificate in question.
+While the above listed attributes _should not_ appear more than once in a subject or issuer DN, if they do, the rightmost takes precedence during the authorization procedure described in Section 6.
+
+__Recommendation__.
+Every certificate implementing a Section 3 profile _should_ only contain the attributes associated with that profile.
+Each attribute _should_ be contained in its own RDN, and the RDNs _should_ be in the same order as they are presented in Section 3.
+If a Section 3 attribute is declared as not required, it _may_ be omitted.
+
 #### 2.1.2.7 `subjectPublicKeyInfo`
+
+The public key of the subject, as well as the identity of the algorithm associated with it.
+The field is defined as follows.
 
 ```asn1
 SubjectPublicKeyInfo ::= SEQUENCE {
@@ -213,15 +247,15 @@ SubjectPublicKeyInfo ::= SEQUENCE {
 }
 ```
 
-#### 2.1.2.8 `issuerUniqueID`
+#### 2.1.2.8 `issuerUniqueID` and `subjectUniqueID`
 
-An optional identifier uniquely associated with the issuer of the certificate. This field must not be used.
+Optional identifiers uniquely associated with the issuer or subject of the certificate.
 
-#### 2.1.2.9 `subjectUniqueID`
+These fields _must not_ be used.
+When a certain certificate, or its subject, needs to be identified, the cryptographic hash, or _fingerprint_, of the certificate _should_ be used.
+See Section 4 for more information about what hashing algorithms should be used for this and other purposes.
 
-An optional identifier uniquely associated with the subject of the certificate. This field must not be used.
-
-#### 2.1.2.10 `extensions`
+#### 2.1.2.9 `extensions`
 
 ```asn1
 Extensions ::= SEQUENCE SIZE (1..MAX) OF Extension
@@ -472,6 +506,8 @@ Any or none at all.
 A _Manufacturer_ certificate.
 
 ## 4. Algorithms, Key Lengths and Other Security Details
+
+- Use fingerprints to identify certificate owners, not subject names.
 
 ## 5. Certificate Creation and Distribution
 
