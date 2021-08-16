@@ -7,38 +7,67 @@ It describes the certificates of Certificate Authorities (CAs) and end entities,
 
 ## 1. Introduction
 
-### 1.1 The X.509 Standard
+TODO
+
+### 1.1 Relation to the IETF RFC 5280 X.509 Profile
+
+All certificate profiles in this document, with the exception of the _Manufacturer_ and _Transfer_ profiles of Sections 3.9 and 3.10, are meant to be strict subsets of the RFC 5280 X.509 profile, which regulates the use of X.509 certificates on the World Wide Web.
+Most significantly, this makes our profiles compatible with many implementations the TLS and DTLS standards for secure communication, even though complying to this document will require additional validation steps, such as ensuring that certain extensions are being or not being used.
+Those steps are outlined in Section 6.
+
+Building on top of RFC 5280 and X.509 means that also X.501 and ASN.1 become relevant to this document, as those standards define the subject/issuer naming schema and syntax notation used by X.509.
+In particular, the interface description language of ASN.1 is used here to describe relevant certificate constituents.
+Please refer to ASN.1 or a relevant learning resource if wanting to know more about its syntax.
 
 ### 1.2 Significant Terminology
 
-#### 1.2.1 Terms Related to Eclipse Arrowhead
+The following subsections represent technical domains with particular bearing on this document.
+Each subsection briefly describes the domain and lists terms relevant to our purposes.
 
-| Term         | Definition |
-|:-------------|:-----------|
-| Arrowhead    | Service-oriented architecture for Industry 4.0 automation. |
-| Device       | A physical machine that could be capable of hosting Arrowhead _systems_. |
-| Local Cloud  | A physical or logical protected network consisting of communicating _systems_.  |
-| Service      | An explicitly defined network application interface accessible to authorized _systems_. |
-| System       | A software application providing Arrowhead-compliant _services_ that runs on a _device_. |
+#### 1.2.1 Eclipse Arrowhead
 
-#### 1.2.2 Terms Related to X.509
+Service-oriented architecture for Industry 4.0 automation.
 
-| Term                         | Abbreviation | Definition |
-|:-----------------------------|:-------------|:-----------|
-| Certificate Authority        | CA           | Entity issuing (signing) other certificates to endorse their validity. |
-| Distinguished Encoding Rules | DER          | An encoding format defined for ASN.1. |
-| Distinguished Name           | DN           | A hierarchical naming format defined by X.500. A DN contains RDNs. |
-| End Entity                   |              | Entity having but not issuing certificates. |
-| Entity                       |              | Any thing or being potentially able to hold and use an X.509 certificate. |
-| Intermediary CA              |              | CA that _did not_ issue its own certificate and, therefore, can be trusted by explicitly trusting another certificate further up its issuance hierarchy. |
-| Relative Distinguished Name  | RDN          | A list of attribute/value pairs belonging to the same hierarchical level in a DN. |
-| Root CA                      |              | CA that _did_ issue (self-sign) its own certificate and, therefore, must be explicitly trusted. |
+- __Device__: A physical machine that could be capable of hosting Arrowhead _systems_.
+- __Local Cloud__: A physical or logical protected network consisting of communicating _systems_.
+- __Service__: An explicitly defined network application interface accessible to authorized _systems_.
+- __System__: A software application providing Arrowhead-compliant _services_ that runs on a _device_.
 
-### 1.3 Relation to the IETF RFC 5280 X.509 Profile
+#### 1.2.2 X.509
 
-### 1.4 Conventions
+Certificate standard for establishing trust between devices over untrusted computer networks.
+
+- __Certificate Authority (CA)__: Entity issuing (signing) other certificates to endorse their validity.
+- __End Entity__: Entity having but not issuing certificates.
+- __Entity__: Any thing or being potentially able to hold and use an X.509 certificate.
+- __Intermediary CA__: CA that _did not_ issue its own certificate and, therefore, can be trusted by explicitly trusting another certificate further up its issuance hierarchy.
+- __Root CA__: CA that _did_ issue (self-sign) its own certificate and, therefore, must be explicitly trusted.
+- __Trust Anchor__: Another name for CA.
+
+#### 1.2.3 X.501
+
+Naming schema for X.500 directories.
+The standard is relevant as it is used to name X.509 certificates.
+
+- __Distinguished Name (DN)__: A hierarchical naming format composed consisting of RDNs. An example of a DN could be `O=My Company,CN=Robert Robertson+E=robert@mail.com`. The `O` RDN is at the highest hierarchical level, while the `CN+E` RDN is at the level below it. `,` is used to delimit the pairs.
+- __Relative Distinguished Name (RDN)__: A list of attribute/value pairs belonging to the same hierarchical level in a DN. Examples of RDNs could be `O=My Company` and `CN=Robert Robertson+E=robert@mail.com`. The first RDN consists of a single pair while the second consists of two delimited by `+`.
+
+#### 1.2.4 ASN.1
+
+Interface description language for describing messages that can be sent or received over a computer network.
+The standard is relevant as it is used to describe the structure of X.509 certificates.
+
+- __Basic Encoding Rules (BER)__: Binary ASN.1 encoding that appends type and length information to each encoded value, which means that decoding a given message does not require knowledge of its original ASN.1 schema.
+- __Distinguished Encoding Rules (DER)__: A subset of BER that guarantees canonical representation. Must be used when encoding X.509 certificates.
+
+### 1.3 Conventions
+
+The words _must_, _must not_, _required_, _shall_, _shall not_, _should_, _should not_, _recommended_, _may_, and _optional_ in this document are to be interpreted as described in IETF RFC 2119.
+In short, this means that _must_, _required_ and _shall_ denote absolute requirements; _must not_ and _shall not_ denote absolute prohibitions; _should_, _should not_ and _recommended_ denote recommendations; and, finally, _may_ and _optional_ denote the subject of concern being truly optional.
 
 ## 2. Certificate Profiles
+
+TODO
 
 ## 2.1 Basic Certificate Fields
 
@@ -446,11 +475,13 @@ A _Manufacturer_ certificate.
 
 ## 5. Certificate Creation and Distribution
 
-## 6. DNS Support and Security Implications
+## 6. Authentication and Authorization
 
-## 7. Known Limitations
+## 7. DNS Support and its Security Implications
 
-### 7.1 Subject Alternative Names and Device Mobility
+## 8. Known Limitations
+
+### 8.1 Subject Alternative Names and Device Mobility
 
 Devices and systems are assumed not to change IP addresses or DNS names during their lifetimes, as these are recorded in their certificates.
 This makes it a bit more challenging when devices need to move between networks and, as a consequence, may be assigned new IP addresses.
