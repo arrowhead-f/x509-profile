@@ -63,6 +63,7 @@ The standard is used to describe the structure of X.509 certificates, which must
 - __Basic Encoding Rules (BER)__: Binary ASN.1 encoding that appends basic type and length information to each encoded value, which means that decoding a given message does not require knowledge of its original ASN.1 description. Defined in X.690.
 - __Distinguished Encoding Rules (DER)__: A subset of BER that guarantees canonical representation, which is to say that every pair of structurally equivalent ASN.1 messages can be represented in DER in exactly one way. Must be used when encoding X.509 certificates. Defined in X.690.
 - __Object Identifier (OID)__: A structured universally unique identifier, useful for identifying parts of ASN.1 messages.
+- __Octet__: An 8-bit byte.
 
 ### 1.3 Conventions
 
@@ -247,6 +248,8 @@ SubjectPublicKeyInfo ::= SEQUENCE {
 }
 ```
 
+See Section 4 for more information about what public key algorithms should be used and supported.
+
 #### 2.1.2.8 `issuerUniqueID` and `subjectUniqueID`
 
 Optional identifiers uniquely associated with the issuer or subject of the certificate.
@@ -267,115 +270,77 @@ Extension  ::= SEQUENCE  {
 }
 ```
 
-### 2.1 CA Certificates
+| Extension                    | OID         | Brief Description |
+|:-----------------------------|:------------|:------------------|
+| Authority Key Identifier     | `2.5.29.35` |
+| Subject Key Identifier       | `2.5.29.14` |
+| Key Usage                    | `2.5.29.15` |
+| Certificate Policies         | `2.5.29.32` |
+| Policy Mappings              | `2.5.29.33` |
+| Subject Alternative Name     | `2.5.29.17` |
+| Issuer Alternative Name      | `2.5.29.18` |
+| Subject Directory Attributes | `2.5.29.9`  |
+| Basic Constraints            | `2.5.29.19` |
+| Name Constraints             | `2.5.29.30` | _Must not_ be used.
+| Policy Constraints           | `2.5.29.36` |
+| Extended Key Usage           | `2.5.29.37` |
+| CRL Distribution Points      | `2.5.29.31` |
 
-#### 2.1.1 Validity
+
+### 2.2 CA Certificates
+
+#### 2.2.1 Common Field Constraints
+
+#### 2.2.1.1 `validity`
 
 TODO: Write something about sensible validity periods for certs.
 
-#### 2.1.2 Subject
+#### 2.2.1.2 `subject`
 
-| RDN               | OID        | Required | Value |
+| Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
 | Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | _Identifier_ specified for each profile. | 
 | Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of certificate. |
 
-#### 2.1.3 Extensions
+#### 2.2.1.3 `extensions`
 
-| Extension        | OID         | Critical | Value |
-|:-----------------|:------------|:---------|:------|
-| BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: n*` |
-| KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Authority Key Identifier | `2.5.29.35` | No       | hash(Issuer.`subjectPublicKeyInfo`.`subjectPublicKey`) |
+| Subject Key Identifier   | `2.5.29.14` | No       | hash(`subjectPublicKeyInfo`.`subjectPublicKey`) |
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: n*` |
+| Key Usage                | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
 
 * each profile specifies its own `n`.
 
-### 2.2 End Entity Certificates
+### 2.2.2 Profiles
 
-#### 2.2.1 Validity
-
-TODO: Write something about sensible validity periods for certs.
-
-#### 2.2.2 Subject
-
-| RDN               | OID        | Required | Value |
-|:------------------|:-----------|:---------|:------|
-| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
-| DN Qualifier (DN) | `2.5.4.46` | Yes      | _Identifier_ specified for each profile. | 
-| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
-
-__Entity naming__.
-Some end entity certificates, as mentioned in their respective profile sections, must contain a subject Common Name (CN) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
-While up to 62 characters are allowed, however, we recommend that names be kept under 20 characters when possible to avoid exceeding the 255 character limit of DNS when including them in domain names.
-The reason for the DNS adherence is to guarantee compatibility with DNS-SD and other naming schemas related to Arrowhead (https://ieeexplore.ieee.org/document/8972250).
-Concretely, when a subject CN in this chapter is required to be a _valid DNS label_, it is to be understood that it matches the following regular expression: `^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,62}$`.
-This means that full domain names are _not_ allowed as subject CN, such as `my-device.company.arrowhead.eu`.
-In the case of that example, it should rather have been `my-device`.
-Full domain names are specified as subject alternative names where relevant.
-
-#### 2.2.3 Extensions
-
-| Extension               | OID         | Critical | Value |
-|:------------------------|:------------|:---------|:------|
-| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
-| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
-| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
-
-### 2.3 Transfer Certificates
-
-## 3. Arrowhead X.509 Profiles
-
-### 3.1 Master
-
-#### 3.1.1 Issuer
+#### 2.2.2.1 Master
 
 Issued by any suitable RFC 5280 certificate, or none at all (self-signed).
 
-#### 3.1.2 Validity
+Validity?
 
-#### 3.1.3 Subject
+`subject`
 
-| RDN               | OID        | Required | Value |
+| Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | `master` | 
 
-#### 2.1.3 Extensions
+`extensions`
 
 | Extension        | OID         | Critical | Value |
 |:-----------------|:------------|:---------|:------|
 | BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 2` |
 
-### 3.2 Gate
-
-
+### 2.2.2.2 Organization
 
 Issued by a _Master_ certificate.
 
-#### Subject
+Validity
 
-| RDN               | OID        | Required | Value |
-|:------------------|:-----------|:---------|:------|
-| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
-| DN Qualifier (DN) | `2.5.4.46` | Yes      | `gate` | 
-| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
-
-#### Extensions
-
-| Extension               | OID         | Critical | Value |
-|:------------------------|:------------|:---------|:------|
-| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
-| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
-| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
-
-### 3.3 Organization
-
-#### Issuer
-
-A _Master_ certificate.
-
-#### Subject
-
-| RDN               | OID        | Required | Value |
+| Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
 | Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | `organization` | 
@@ -396,7 +361,7 @@ An _Organization_ certificate.
 
 #### Subject
 
-| RDN               | OID        | Required | Value |
+| Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | `localcloud` | 
 | Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
@@ -408,6 +373,43 @@ An _Organization_ certificate.
 | BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 0` |
 | KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
 
+
+### 2.3 End Entity Certificates
+
+#### 2.2.1 `validity`
+
+TODO: Write something about sensible validity periods for certs.
+
+#### 2.2.2 `subject`
+
+| Attribute Type    | OID        | Required | Value |
+|:------------------|:-----------|:---------|:------|
+| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | _Identifier_ specified for each profile. | 
+| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
+
+__Entity naming__.
+Some end entity certificates, as mentioned in their respective profile sections, must contain a subject Common Name (CN) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
+While up to 62 characters are allowed, however, we recommend that names be kept under 20 characters when possible to avoid exceeding the 255 character limit of DNS when including them in domain names.
+The reason for the DNS adherence is to guarantee compatibility with DNS-SD and other naming schemas related to Arrowhead (https://ieeexplore.ieee.org/document/8972250).
+Concretely, when a subject CN in this chapter is required to be a _valid DNS label_, it is to be understood that it matches the following regular expression: `^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,62}$`.
+This means that full domain names are _not_ allowed as subject CN, such as `my-device.company.arrowhead.eu`.
+In the case of that example, it should rather have been `my-device`.
+Full domain names are specified as subject alternative names where relevant.
+
+#### 2.2.3 `extensions`
+
+| Extension               | OID         | Critical | Value |
+|:------------------------|:------------|:---------|:------|
+| KeyUsage                | `2.5.29.15` | Yes      | `digitalSignature(0), keyEncipherment(2)` |
+| ExtendedKeyUsage        | `2.5.29.37` | No       | `serverAuth(1.3.6.1.5.5.7.3.1), clientAuth(1.3.6.1.5.5.7.3.2)` |
+| SubjectAlternativeNames | `2.5.29.17` | Yes      | IPv4, IPv6 and DNS addresses/names associated with the device owning the certificate. |
+
+### 2.3 Transfer Certificates
+
+## 3. Arrowhead X.509 Profiles
+
+
 ### 3.5 On-Boarding
 
 #### Issuer
@@ -416,7 +418,7 @@ A _Local Cloud_ certificate.
 
 #### Subject
 
-| RDN               | OID        | Required | Value |
+| Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | `onboarding` | 
 | Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
@@ -437,7 +439,7 @@ A _Local Cloud_ certificate.
 
 #### Subject
 
-| RDN               | OID        | Required | Value |
+| Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | `device` | 
 | Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
@@ -458,7 +460,7 @@ A _Local Cloud_ certificate.
 
 #### Subject
 
-| RDN               | OID        | Required | Value |
+| Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
 | Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | `system` | 
@@ -480,7 +482,7 @@ A _Local Cloud_ certificate.
 
 #### Subject
 
-| RDN               | OID        | Required | Value |
+| Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
 | DN Qualifier (DN) | `2.5.4.46` | Yes      | `operator` | 
 | Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of operator. |
@@ -525,3 +527,8 @@ However, as mobility at a scale that makes this setup a problem are currently de
 It could be working around by using proxies, negotiating a new certificate every network handover, recording all relevant IP addresses in advance in each certificate, and so on.
 
 ## References
+
+| Extension        | OID         | Critical | Value |
+|:-----------------|:------------|:---------|:------|
+| BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 1` |
+| KeyUsage         | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
