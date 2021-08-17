@@ -244,27 +244,27 @@ They are categorized for the sake of clarity.
 
 | Extension                    | `extnID` (OID)       | Brief Description |
 |:-----------------------------|:---------------------|:------------------|
-| _Key Extensions_             |                      |
+| __Key Extensions__           |                      |
 | Authority Key Identifier     | `2.5.29.35`          | Identifier uniquely associated with certificate issuer.
 | Subject Key Identifier       | `2.5.29.14`          | Identifier uniquely associated with certificate subject.
 | Key Usage                    | `2.5.29.15`          | Public key usage restrictions.
 | Extended Key Usage           | `2.5.29.37`          | Additional public key usage restrictions.
-| _Policy Extensions_          |                      |
+| __Policy Extensions__        |                      |
 | Certificate Policies         | `2.5.29.32`          | List of policies accepted by the certificate subject.
 | Policy Mappings              | `2.5.29.33`          | List of policy equivalence relations.
 | Policy Constraints           | `2.5.29.36`          | Policy validation constraints (e.g. policy X must be accepted).
 | Inhibit `anyPolicy`          | `2.5.29.54`          | Policy validation constraint related to use of `anyPolicy`.
-| _Name Extensions_            |                      |
+| __Name Extensions__          |                      |
 | Subject Alternative Name     | `2.5.29.17`          | Additional names associated with the certificate subject.
 | Issuer Alternative Name      | `2.5.29.18`          | Additional names associated with the certificate issuer.
 | Name Constraints             | `2.5.29.30`          | List of subject name restrictions for issued certificates.
-| _CRL Extensions_             |                      |
+| __CRL Extensions__           |                      |
 | CRL Distribution Points      | `2.5.29.31`          | List of where relevant CRLs can be found.
 | Freshest CRL                 | `2.5.29.46`          | List of where delta CRLs can be found.
-| _Information Extensions_     |                      |
+| __Information Extensions__   |                      |
 | Authority Information Access | `1.3.6.1.5.5.7.1.1`  | List of where issuer information and services can be found.
 | Subject Information Access   | `1.3.6.1.5.5.7.1.11` | List of where subject information and services can be found.
-| _Other Extensions_           |                      |
+| __Other Extensions__         |                      |
 | Subject Directory Attributes | `2.5.29.9`           | Additional subject identification attributes (e.g. nationality).
 | Basic Constraints            | `2.5.29.19`          | Description of where a certificate belongs in its CA hierarchy.
 
@@ -391,37 +391,79 @@ BasicConstraints ::= SEQUENCE {
 ```
 
 The extension _must_ be used by all Arrowhead-compliant certificates.
+The `pathLenConstraint` _must_ be set by all CA certificates.
 
-### 2.2 CA Certificates
+### 2.2 Certificate Hierarchy
 
-#### 2.2.1 Common Field Constraints
+There are eight _primary_ and two _secondary_ certificate profiles defined in this document, depicted in the diagram further below.
+The boxes of the diagram represent certificate profiles.
+The arrows in the diagram are to be read as "issued by", meaning that the certificate profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
 
-#### 2.2.1.1 `validity`
+```
+    Secondary                                      Primary
+
+                                              + - - - - - - - +
+                                              .    (Root)     .
+                                              + - - - - - - - +
+                                                      A
+                                                      .
+                                                      .
+                                              +---------------+
+                                              |    Master     |
+                                              +---------------+
+                                                      A
+                                                      |
+                                                      +--------------------+
+                                                      |                    |
+                                              +-------+-------+    +-------+-------+ 
+                                              | Organization  |    |     Gate      | 
+                                              +---------------+    +---------------+ 
+                                                      A
+                                                      |
++-------+-------+                             +-------+-------+
+| Manufacturer  |                             |  Local Cloud  |
++---------------+                             +---------------+
+        A                                             A
+        |                                             |
+        |                  +-----------------+--------+--------+-----------------+
+        |                  |                 |                 |                 | 
++-------+-------+   +------+------+   +------+------+   +------+------+   +------+------+
+|   Transfer    |   | On-Boarding |   |   Device    |   |   System    |   |  Operator   |  End Entity Certificates
++---------------+   +-------------+   +-------------+   +-------------+   +-------------+
+```
+
+The certificate constraints presented throughout the rest of this section only apply to the primary certificates.
+The secondary certificates are considered only for their indirect relation to the _On-Boarding_ certificate.
+Their only constraints are that the _Manufacturer_ certificate _must_ have issued the _Transfer_ certificate and that they pass all basic X.509 validation checks.
+
+### 2.3 CA Certificates
+
+#### 2.3.1 Common Fields
+
+#### 2.3.1.1 `validity`
 
 TODO: Write something about sensible validity periods for certs.
 
-#### 2.2.1.2 `subject`
+#### 2.3.1.2 `subject`
 
 | Attribute Type    | OID        | Required | Value |
 |:------------------|:-----------|:---------|:------|
-| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
-| DN Qualifier (DN) | `2.5.4.46` | Yes      | _Identifier_ specified for each profile. | 
-| Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of certificate. |
+| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization.
+| DN Qualifier (DN) | `2.5.4.46` | Yes      | _Profile identifier_ specific to each certificate profile.
+| Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of certificate.
 
-#### 2.2.1.3 `extensions`
+#### 2.3.1.3 `extensions`
 
 | Extension                | OID         | Critical | Value |
 |:-------------------------|:------------|:---------|:------|
-| Authority Key Identifier | `2.5.29.35` | No       | hash(Issuer.`subjectPublicKeyInfo`.`subjectPublicKey`) |
-| Subject Key Identifier   | `2.5.29.14` | No       | hash(`subjectPublicKeyInfo`.`subjectPublicKey`) |
-| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: n*` |
-| Key Usage                | `2.5.29.15` | Yes      | `keyCertSign(5), cRLSign(6)` |
+| Authority Key Identifier | `2.5.29.35` | No       | See Section 2.1.9.1.
+| Subject Key Identifier   | `2.5.29.14` | No       | See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | See Section 2.1.9.6.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.1.
 
-* each profile specifies its own `n`.
+### 2.3.2 Profiles
 
-### 2.2.2 Profiles
-
-#### 2.2.2.1 Master
+#### 2.3.2.1 Master
 
 Issued by any suitable RFC 5280 certificate, or none at all (self-signed).
 
@@ -439,7 +481,7 @@ Validity?
 |:-----------------|:------------|:---------|:------|
 | BasicConstraints | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 2` |
 
-### 2.2.2.2 Organization
+### 2.3.2.2 Organization
 
 Issued by a _Master_ certificate.
 
