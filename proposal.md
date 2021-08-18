@@ -10,7 +10,7 @@ TODO
 
 ### 1.1 Relation to the IETF RFC 5280 X.509 Profile
 
-All certificate profiles in this document, with the exception of the _Manufacturer_ and _Transfer_ profiles of Sections X and Y, are _required_ to be strict subsets of the RFC 5280 X.509 profile, which regulates the use of X.509 certificates on the World Wide Web.
+All certificate profiles specified in this document are _required_ to be strict subsets of the RFC 5280 X.509 profile, which regulates the use of X.509 certificates on the World Wide Web.
 
 ### 1.2 Significant Terminology
 
@@ -66,13 +66,42 @@ The words __must__, __must not__, __required__, __should__, __should not__, __re
 
 ## 2. Certificate Profiles
 
-TODO
+There are eight certificate profiles defined in this document, depicted in the diagram further below.
+Each diagram box represents a certificate profile.
+The arrows in the diagram are to be read as "issued by", meaning that the every certificate adhering to the profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
+
+```
+                          +---------------+
+                          |    Master     |
+                          +---------------+
+                                  A
+                                  |
+                                  +--------------------+
+                                  |                    |
+                          +-------+-------+    +-------+-------+ 
+                          | Organization  |    |     Gate      | 
+                          +---------------+    +---------------+ 
+                                  A
+                                  |
+                          +-------+-------+
+                          |  Local Cloud  |
+                          +---------------+
+                                  A
+                                  |
+       +-----------------+--------+--------+-----------------+
+       |                 |                 |                 | 
++------+------+   +------+------+   +------+------+   +------+------+
+| On-Boarding |   |   Device    |   |   System    |   |  Operator   |
++-------------+   +-------------+   +-------------+   +-------------+
+```
+
+We begin by considering the X.509 format itself, after which we first consider the CA certificates (Master, Organization and Local Cloud) and then the end entity certificates (Gate, On-Boarding, Device, System and Operator).
 
 ## 2.1 Certificate Format
 
-This section introduces the X.509 certificate format in its ASN.1 syntax.
-It describes each of its fields and states how they should be used, if at all, by conforming certificates.
-It does not rigorously define all fields, however.
+In this section, we introduce the X.509 certificate format in its ASN.1 syntax.
+We describes each of its fields and state how they should be used, if at all, by conforming certificates.
+Our descriptions are not, however, rigorous enough to base real-world implementations on only them.
 Advanced learners and certificate software implementors should consult the official sources for more details.
 
 The ASN.1 syntax of the third version of the X.509 certificate is defined in as follows in RFC 5280:
@@ -231,7 +260,7 @@ A list of certificate extensions, as defined below.
 ```asn1
 Extensions ::= SEQUENCE SIZE (1..MAX) OF Extension
 
-Extension  ::= SEQUENCE  {
+Extension  ::= SEQUENCE {
     extnID     OBJECT IDENTIFIER,
     critical   BOOLEAN DEFAULT FALSE,
     extnValue  OCTET STRING
@@ -271,7 +300,7 @@ Each category of extensions is described in the following subsections.
 
 #### 2.1.9.1 Key Extensions
 
-The _Authority Key Identifier_ and _Subject Key Identifier_ extensions are used to identify the public key of the issuer and subject of a given certificate, respectively.
+The __Authority Key Identifier__ and __Subject Key Identifier__ extensions are used to identify the public key of the issuer and subject of a given certificate, respectively.
 The extensions are defined as follows:
 
 ```asn1
@@ -295,7 +324,7 @@ If a self-signed certificate leaves the `authorityCertIssuer` and `authorityCert
 RFC 5280 further _requires_ that all but end entity certificates use the `SubjectKeyIdentifier` extension.
 Its value _should_ be the the cryptographic hash of the `subjectPublicKey` value (excluding the tag, length, and number of unused bits) of the `subjectPublicKeyInfo` field.
 
-The _Key Usage_ and _Extended Key Usage_ extensions are defined as follows:
+The __Key Usage__ and __Extended Key Usage__ extensions are defined as follows:
 
 ```asn1
 KeyUsage ::= BIT STRING {
@@ -330,7 +359,7 @@ Their use is _optional_.
 
 #### 2.1.9.3 Name Extensions
 
-The _Subject Alternative Name_ and _Issuer Alternative Name_ allows for additional identities to be associated with a given `subject` or `issuer` name.
+The __Subject Alternative Name__ and __Issuer Alternative Name__ allows for additional identities to be associated with a given `subject` or `issuer` name.
 Such additional identities significantly include DNS names, IP addresses and e-mail addresses.
 For example, given that some system receives a signed message and the certificate associated with that signature, the system can verify that it received the message via one of the identities listed as subject alternative name in that certificate.
 The extensions are defined as follows:
@@ -354,7 +383,7 @@ GeneralName ::= CHOICE {
 }
 ```
 
-The _Name Constraints_ extension makes it possible for a CA to restrict the set of allowed `subject` and `SubjectAltName` that may be specified in certificates it issues.
+The __Name Constraints__ extension makes it possible for a CA to restrict the set of allowed `subject` and `SubjectAltName` that may be specified in certificates it issues.
 Please refer to RFC 5280 Section 4.2.1.10 for more details.
 
 #### 2.1.9.4 CRL Extensions
@@ -376,10 +405,10 @@ Those provisions _should_ be used when possible.
 
 #### 2.1.9.6 Other Extensions
 
-The _Subject Directory Attributes_ allows for arbitrary identification attributes, such as nationality, to be associated with the `subject` of a certificate.
+The __Subject Directory Attributes__ allows for arbitrary identification attributes, such as nationality, to be associated with the `subject` of a certificate.
 It _may_ be used.
 
-The _Basic Constraints_ extension allows for it to be denoted whether or not a given certificate belongs to a CA, as well as how many intermediary CAs may exist below it in any given certificate chain.
+The __Basic Constraints__ extension allows for it to be denoted whether or not a given certificate belongs to a CA, as well as how many intermediary CAs may exist below it in any given certificate chain.
 The extension is defined as follows:
 
 ```asn1
@@ -393,41 +422,6 @@ The extension _must_ be used by all Arrowhead-compliant certificates.
 The `pathLenConstraint` _must_ be set by all CA certificates.
 
 ### 2.2 Certificate Hierarchy
-
-There are eight _primary_ and two _secondary_ certificate profiles defined in this document, depicted in the diagram further below.
-The boxes of the diagram represent certificate profiles.
-The arrows in the diagram are to be read as "issued by", meaning that the certificate profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
-
-```
-    Secondary                                    Primary
-
-+--------------+                            +---------------+
-| Manufacturer |                            |    Master     |
-+--------------+                            +---------------+
-       A                                            A
-       |                                            |
-       |                                            +--------------------+
-       |                                            |                    |
-       |                                    +-------+-------+    +-------+-------+ 
-       |                                    | Organization  |    |     Gate      | 
-       |                                    +---------------+    +---------------+ 
-       |                                            A
-       |                                            |
-       |                                    +-------+-------+
-       |                                    |  Local Cloud  |
-       |                                    +---------------+
-       |                                            A
-       |                                            |
-       |                 +-----------------+--------+--------+-----------------+
-       |                 |                 |                 |                 | 
-+------+------+   +------+------+   +------+------+   +------+------+   +------+------+
-|  Transfer   |   | On-Boarding |   |   Device    |   |   System    |   |  Operator   |
-+-------------+   +-------------+   +-------------+   +-------------+   +-------------+
-```
-
-The certificate constraints presented throughout the rest of this section only apply to the primary certificates.
-The secondary certificates are considered only for their indirect relation to the _On-Boarding_ certificate.
-Their only constraints are that the _Manufacturer_ certificate _must_ have issued the _Transfer_ certificate and that they pass all basic X.509 validation checks.
 
 ### 2.3 CA Certificates
 
