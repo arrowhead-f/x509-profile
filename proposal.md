@@ -11,12 +11,11 @@ TODO
 ### 1.1 Relation to the IETF RFC 5280 X.509 Profile
 
 All certificate profiles in this document, with the exception of the _Manufacturer_ and _Transfer_ profiles of Sections X and Y, are _required_ to be strict subsets of the RFC 5280 X.509 profile, which regulates the use of X.509 certificates on the World Wide Web.
-Most significantly, this makes our profiles compatible with many implementations of the TLS and DTLS standards for secure communication, as well as many with many web programming frameworks.
 
 ### 1.2 Significant Terminology
 
 The following subsections represent technical domains with particular bearing on this document.
-Each subsection briefly describes the domain and lists terms and abbreviations relevant to our purposes.
+Each subsection briefly describes a domain and defines relevant terms and abbreviations.
 
 #### 1.2.1 Eclipse Arrowhead
 
@@ -400,36 +399,30 @@ The boxes of the diagram represent certificate profiles.
 The arrows in the diagram are to be read as "issued by", meaning that the certificate profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
 
 ```
-    Secondary                                      Primary
+    Secondary                                    Primary
 
-                                              + - - - - - - - +
-                                              .    (Root)     .
-                                              + - - - - - - - +
-                                                      A
-                                                      .
-                                                      .
-                                              +---------------+
-                                              |    Master     |
-                                              +---------------+
-                                                      A
-                                                      |
-                                                      +--------------------+
-                                                      |                    |
-                                              +-------+-------+    +-------+-------+ 
-                                              | Organization  |    |     Gate      | 
-                                              +---------------+    +---------------+ 
-                                                      A
-                                                      |
-+-------+-------+                             +-------+-------+
-| Manufacturer  |                             |  Local Cloud  |
-+---------------+                             +---------------+
-        A                                             A
-        |                                             |
-        |                  +-----------------+--------+--------+-----------------+
-        |                  |                 |                 |                 | 
-+-------+-------+   +------+------+   +------+------+   +------+------+   +------+------+
-|   Transfer    |   | On-Boarding |   |   Device    |   |   System    |   |  Operator   |  End Entity Certificates
-+---------------+   +-------------+   +-------------+   +-------------+   +-------------+
++--------------+                            +---------------+
+| Manufacturer |                            |    Master     |
++--------------+                            +---------------+
+       A                                            A
+       |                                            |
+       |                                            +--------------------+
+       |                                            |                    |
+       |                                    +-------+-------+    +-------+-------+ 
+       |                                    | Organization  |    |     Gate      | 
+       |                                    +---------------+    +---------------+ 
+       |                                            A
+       |                                            |
+       |                                    +-------+-------+
+       |                                    |  Local Cloud  |
+       |                                    +---------------+
+       |                                            A
+       |                                            |
+       |                 +-----------------+--------+--------+-----------------+
+       |                 |                 |                 |                 | 
++------+------+   +------+------+   +------+------+   +------+------+   +------+------+
+|  Transfer   |   | On-Boarding |   |   Device    |   |   System    |   |  Operator   |
++-------------+   +-------------+   +-------------+   +-------------+   +-------------+
 ```
 
 The certificate constraints presented throughout the rest of this section only apply to the primary certificates.
