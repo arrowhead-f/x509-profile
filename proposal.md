@@ -19,7 +19,7 @@ Each subsection briefly describes a domain and defines relevant terms and abbrev
 
 #### 1.2.1 Eclipse Arrowhead
 
-Service-oriented architecture for Industry 4.0 automation.
+Service-oriented communication architecture for Industry 4.0 automation.
 
 - __Device__: A physical machine that could be capable of hosting Arrowhead _systems_.
 - __Local Cloud__: A physical protected network consisting of communicating _systems_.
@@ -32,7 +32,8 @@ Certificate standard for establishing trust between devices over untrusted compu
 
 - __Certificate Authority (CA)__: Entity issuing (signing) other certificates to endorse their validity.
 - __Certificate Chain__: A chain consisting of an _end entity_ certificate, its _issuer_'s certificate, that _issuer_'s _issuer_'s certificate, and so on up to the _root CA_'s certificate.
-- __Certificate Revocation List (CRL)__: A list of certificates, maintained their _issuer_, that identifies certificates who no longer are to be considered valid, even though they are yet to expire.
+- __Certificate Revocation List (CRL)__: A list identifying certificates that no longer are to be considered valid even though they are yet to expire.
+- __Certificate Signing Request (CSR)__: A description of a desired certificate that can be sent to a CA.
 - __End Entity__: Entity having but not issuing certificates.
 - __Entity__: Any thing or being potentially able to hold and use an X.509 certificate.
 - __Intermediary CA__: CA that _did not_ issue its own certificate and, therefore, can be trusted by explicitly trusting another certificate further up its issuance hierarchy.
@@ -47,7 +48,7 @@ Certificate standard for establishing trust between devices over untrusted compu
 Naming schema for X.500 directories.
 The standard is used to name the subjects and issuers of X.509 certificates.
 
-- __Distinguished Name (DN)__: A hierarchical naming format composed consisting of RDNs. An example of a DN could be `O=My Company,CN=Robert Robertson+E=robert@mail.com`. The `O` RDN is at the highest hierarchical level, while the `CN+E` RDN is at the level below it. The comma character `,` is used to delimit the RDNs.
+- __Distinguished Name (DN)__: A hierarchical naming format composed consisting of RDNs. An example of a DN could be `O=My Company,CN=Robert Robertson+E=robert@mail.com`. The `O` RDN is at the highest hierarchical level, while the `CN+E` RDN is at the level below it. The comma character `,` is used to delimit the RDNs in this example.
 - __Relative Distinguished Name (RDN)__: A list of attribute/value pairs belonging to the same hierarchical level in a DN. Examples of RDNs could be `O=My Company` and `CN=Robert Robertson+E=robert@mail.com`. The first RDN consists of a single pair while the second consists of two delimited by `+`.
 
 #### 1.2.4 ASN.1
@@ -57,18 +58,16 @@ The standard is used to describe the structure of X.509 certificates, which _mus
 
 - __Basic Encoding Rules (BER)__: Binary ASN.1 encoding that appends basic type and length information to each encoded value, which means that decoding a given message does not require knowledge of its original ASN.1 description. Defined in X.690.
 - __Distinguished Encoding Rules (DER)__: A subset of BER that guarantees canonical representation, which is to say that every pair of structurally equivalent ASN.1 messages can be represented in DER in exactly one way. Must be used when encoding X.509 certificates. Defined in X.690.
-- __Object Identifier (OID)__: A structured universally unique identifier, useful for identifying parts of ASN.1 messages.
+- __Object Identifier (OID)__: A hierarchical and universally unique identifier, useful for identifying parts of ASN.1 messages.
 - __Octet__: An 8-bit byte.
 
 ### 1.3 Conventions
 
-The words __must__, __must not__, __required__, __should__, __should not__, __recommended__, __may__, and __optional__ in this document are to be interpreted as follows: __must__ and __required__ denote absolute requirements that must be adhered to by profile adherents; __must not__ denotes an absolute prohibition; __should__, __should not__ and __recommended__ denote recommendations that should be deviated from only if special circumstances make it relevant; and, finally, __may__ and __optional__ denote something being truly optional.
+The words __must__, __must not__, __required__, __should__, __should not__, __recommended__, __may__, and __optional__ in this document are to be interpreted as follows: __must__ and __required__ denote absolute requirements that must be adhered to for a certificate to be considered compliant to a given profile; __must not__ denotes an absolute prohibition; __should__, __should not__ and __recommended__ denote recommendations that should be deviated from only if special circumstances make it relevant; and, finally, __may__ and __optional__ denote something being truly optional.
 
 ## 2. Certificate Profiles
 
-There are eight certificate profiles defined in this document, depicted in the diagram further below.
-Each diagram box represents a certificate profile.
-The arrows in the diagram are to be read as "issued by", meaning that the every certificate adhering to the profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
+There are eight certificate profiles defined in this document, depicted in the following diagram:
 
 ```
                           +---------------+
@@ -94,17 +93,16 @@ The arrows in the diagram are to be read as "issued by", meaning that the every 
 | On-Boarding |   |   Device    |   |   System    |   |  Operator   |
 +-------------+   +-------------+   +-------------+   +-------------+
 ```
+Each diagram box represents a profile.
+The arrows in the diagram are to be read as "issued by", meaning that the every certificate adhering to the profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
 
-We begin by considering the X.509 format itself, after which we first consider the CA certificates (Master, Organization and Local Cloud) and then the end entity certificates (Gate, On-Boarding, Device, System and Operator).
+In this section, we begin by considering the X.509 format itself, after which we first consider the CA certificates (Master, Organization and Local Cloud) and then the end entity certificates (Gate, On-Boarding, Device, System and Operator).
+The details included in this section are intended to be enough to allow for the correct parameterization of certificates, but are unlikely to be sufficient for implementing software for handling certificate.
+If the latter is relevant, please consult RFC 5280, X.509, X.501, X.690 and ASN.1 for all complementary details.
 
 ## 2.1 Certificate Format
 
-In this section, we introduce the X.509 certificate format in its ASN.1 syntax.
-We describes each of its fields and state how they should be used, if at all, by conforming certificates.
-Our descriptions are not, however, rigorous enough to base real-world implementations on only them.
-Advanced learners and certificate software implementors should consult the official sources for more details.
-
-The ASN.1 syntax of the third version of the X.509 certificate is defined in as follows in RFC 5280:
+The ASN.1 syntax of the third version of the X.509 certificate format is defined in as follows in RFC 5280:
 
 ```asn1
     Certificate ::= SEQUENCE {
@@ -135,7 +133,7 @@ Each of its fields is described in the following subsections.
 #### 2.1.1 `version`
 
 X.509 version of the certificate.
-Must be `v3(2)` for all certificates that utilize certificate extensions, as described in Section 2.1.9.
+Only `v3(2)` supports certificate extensions, which _must_ be used by all profiles described in this document.
 Supporting `v1(0)` and `v2(1)` at all is _optional_.
 
 #### 2.1.2 `serialNumber`
@@ -158,7 +156,7 @@ This field must contain the same algorithm as the `signatureAlorithm` field in t
 #### 2.1.4 `issuer`
 
 The DN of the issuer of the certificate in question.
-More specifically, this field contains an exact copy of the `subject` field of Section 2.1.6 from the certificate of its issuer.
+More specifically, this field contains an exact copy of the `subject` field of Section 2.1.6 from the certificate of its issuer, or a copy of the `issuer` field of the same certificate if it is self-signed.
 
 #### 2.1.5 `validity`
 
@@ -178,7 +176,7 @@ Time ::= CHOICE {
 ```
 
 For each of these two dates, the date in question _must_ be encoded as a `UTCTime` if its year is less than or equal to 2049, or as a `GeneralizedTime` if the year is equal to or greater than 2050.
-More details about the validity format may be read in Section 4.1.2.5 of RFC 5280.
+See Section 4.1.2.5 of RFC 5280 for more details.
 
 #### 2.1.6 `subject`
 
@@ -250,7 +248,7 @@ Optional identifiers uniquely associated with the issuer or subject of the certi
 
 These fields _must not_ be used.
 When a certain certificate, or its subject, needs to be identified, the cryptographic hash of the certificate, or its _fingerprint_, _should_ be used.
-If desired to identify the subject by its public key, which _may_ be used in multiple certificates, the cryptographic hash of the value bytes of the `subjectPublicKey` field of `subjectPublicKeyInfo` _should_ be used.
+If desired to identify the subject by its public key, which _may_ be used in multiple certificates, the cryptographic hash of the `subjectPublicKey` field (excluding the tag, length, and number of unused bits) of `subjectPublicKeyInfo` _should_ be used.
 See Section 3 for more information about what hashing algorithms should be used for this and other purposes.
 
 #### 2.1.9 `extensions`
@@ -267,8 +265,7 @@ Extension  ::= SEQUENCE {
 }
 ```
 
-RFC 5280 explicitly outlines 17 different X.509 extensions, listed below.
-They are categorized for the sake of clarity.
+RFC 5280 explicitly outlines 17 different X.509 extensions, listed by category below.
 
 | Extension                    | `extnID` (OID)       | Brief Description |
 |:-----------------------------|:---------------------|:------------------|
@@ -304,7 +301,7 @@ The __Authority Key Identifier__ and __Subject Key Identifier__ extensions are u
 The extensions are defined as follows:
 
 ```asn1
--- Required for all but self-signed CA certificates.
+-- Required for all but self-signed CA certificates (root CAs).
 AuthorityKeyIdentifier ::= SEQUENCE {
     keyIdentifier             [0] KeyIdentifier           OPTIONAL, -- Required.
     authorityCertIssuer       [1] GeneralNames            OPTIONAL, -- Optional.
@@ -383,7 +380,12 @@ GeneralName ::= CHOICE {
 }
 ```
 
+The `SubjectAltName` extension _must_ be used by all end entity certificates and must identify at least one DNS name or IP address.
+The extension _must_ be used for CA certificates that handles CSRs directly via network application interfaces.
+Use of the `IssuerAltName` is _optional_.
+
 The __Name Constraints__ extension makes it possible for a CA to restrict the set of allowed `subject` and `SubjectAltName` that may be specified in certificates it issues.
+The extension _may_ be used.
 Please refer to RFC 5280 Section 4.2.1.10 for more details.
 
 #### 2.1.9.4 CRL Extensions
@@ -400,7 +402,7 @@ Its use is _recommended_ for revoking and verifying the validity of end entity c
 The information extensions allows various types of data sources or services to be associated with the certificate holder.
 These extensions _should not_ be used.
 
-Eclipse Arrowhead a service-oriented architecture with its own provisions for metadata and service management.
+Eclipse Arrowhead a service-oriented architecture with its own provisions for metadata distribution and service management.
 Those provisions _should_ be used when possible.
 
 #### 2.1.9.6 Other Extensions
@@ -420,6 +422,7 @@ BasicConstraints ::= SEQUENCE {
 
 The extension _must_ be used by all Arrowhead-compliant certificates.
 The `pathLenConstraint` _must_ be set by all CA certificates.
+It _must not_ be set by end entity certificates.
 
 ### 2.2 Certificate Hierarchy
 
