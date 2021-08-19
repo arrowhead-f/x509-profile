@@ -96,9 +96,9 @@ There are eight certificate profiles defined in this document, depicted in the f
 Each diagram box represents a profile.
 The arrows in the diagram are to be read as "issued by", meaning that the every certificate adhering to the profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
 
-In this section, we begin by considering the X.509 format itself, after which we first consider the CA certificates (Master, Organization and Local Cloud) and then the end entity certificates (Gate, On-Boarding, Device, System and Operator).
+In this section, we begin by considering the X.509 format itself, after which we outline the Master, Gate, Organization, Local Cloud, On-Boarding, Device, System and Operator profiles.
 The details included in this section are intended to be enough to allow for the correct parameterization of certificates, but are unlikely to be sufficient for implementing software for handling them.
-If the latter is relevant, please consult RFC 5280, X.509, X.501, X.690 and ASN.1 for complementary details.
+If the latter is relevant, please refer to RFC 5280, X.509, X.501, X.690 and ASN.1.
 
 ## 2.1 Certificate Format
 
@@ -346,9 +346,14 @@ KeyPurposeId ::= OBJECT IDENTIFIER
 
 The `KeyUsage` extension is a set of bit flags used to indicate various ways in which a certificate _may_ be used.
 Please refer to RFC 5280 Section 4.2.1.3 for descriptions of each bit flag.
+The extension _must_ be used in all certificates.
+How to set it is outlined in the section specific to each particular certificate profile.
 
 The `ExtKeyUsageSyntax` extension has the same purpose, but is open-ended in the sense that it allows for any OID to be used as an indication of what a certain certificate _may_ be used for.
 RFC 5280 lists six such identifiers, out of which two has particular bearing on this document, namely the `serverAuth` (OID `1.3.6.1.5.5.7.3.1`) and `clientAuth` (OID `1.3.6.1.5.5.7.3.2`) identifiers, which indicate that the certificate holder should be allowed to act as a World Wide Web TLS server and client, respectively.
+The extension _must_ be used in all end entity certificates, as well in the certificates of the CAs that handle CSRs directly via network application interfaces.
+The `serverAuth` and `clientAuth` identifiers _must_ be included.
+Other identifiers _may_ be used.
 
 #### 2.1.9.2 Policy Extensions
 
@@ -426,8 +431,6 @@ BasicConstraints ::= SEQUENCE {
 The extension _must_ be used by all Arrowhead-compliant certificates.
 The `pathLenConstraint` _must_ be set by all CA certificates.
 It _must not_ be set by end entity certificates.
-
-### 2.2 Certificate Hierarchy
 
 ### 2.3 CA Certificates
 
