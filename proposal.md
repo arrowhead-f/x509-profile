@@ -33,7 +33,7 @@ Certificate standard for establishing trust between devices over untrusted compu
 - __Certificate Authority (CA)__: Entity issuing (signing) other certificates to endorse their validity.
 - __Certificate Chain__: A chain consisting of an _end entity_ certificate, its _issuer_'s certificate, that _issuer_'s _issuer_'s certificate, and so on up to the _root CA_'s certificate.
 - __Certificate Revocation List (CRL)__: A list identifying certificates that no longer are to be considered valid even though they are yet to expire.
-- __Certificate Signing Request (CSR)__: A description of a desired certificate that can be sent to a CA.
+- __Certificate Signing Request (CSR)__: A request for a certificate to be issued by a receiving CA.
 - __End Entity__: Entity having but not issuing certificates.
 - __Entity__: Any thing or being potentially able to hold and use an X.509 certificate.
 - __Intermediary CA__: CA that _did not_ issue its own certificate and, therefore, can be trusted by explicitly trusting another certificate further up its issuance hierarchy.
@@ -97,8 +97,8 @@ Each diagram box represents a profile.
 The arrows in the diagram are to be read as "issued by", meaning that the every certificate adhering to the profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
 
 In this section, we begin by considering the X.509 format itself, after which we first consider the CA certificates (Master, Organization and Local Cloud) and then the end entity certificates (Gate, On-Boarding, Device, System and Operator).
-The details included in this section are intended to be enough to allow for the correct parameterization of certificates, but are unlikely to be sufficient for implementing software for handling certificate.
-If the latter is relevant, please consult RFC 5280, X.509, X.501, X.690 and ASN.1 for all complementary details.
+The details included in this section are intended to be enough to allow for the correct parameterization of certificates, but are unlikely to be sufficient for implementing software for handling them.
+If the latter is relevant, please consult RFC 5280, X.509, X.501, X.690 and ASN.1 for complementary details.
 
 ## 2.1 Certificate Format
 
@@ -177,6 +177,9 @@ Time ::= CHOICE {
 
 For each of these two dates, the date in question _must_ be encoded as a `UTCTime` if its year is less than or equal to 2049, or as a `GeneralizedTime` if the year is equal to or greater than 2050.
 See Section 4.1.2.5 of RFC 5280 for more details.
+
+The time span denoted by this field _should_ be shorter than the expected lifetime of the entity owning it, if provisions exist for renewing it during its lifetime.
+More specific recommendations will be published in other documents of the Eclipse Arrowhead project.
 
 #### 2.1.6 `subject`
 
@@ -384,7 +387,7 @@ The `SubjectAltName` extension _must_ be used by all end entity certificates and
 The extension _must_ be used for CA certificates that handles CSRs directly via network application interfaces.
 Use of the `IssuerAltName` is _optional_.
 
-The __Name Constraints__ extension makes it possible for a CA to restrict the set of allowed `subject` and `SubjectAltName` that may be specified in certificates it issues.
+The __Name Constraints__ extension makes it possible for a CA to restrict the set of values allowed for the `subject` and `SubjectAltName` fields in issued certificates.
 The extension _may_ be used.
 Please refer to RFC 5280 Section 4.2.1.10 for more details.
 
