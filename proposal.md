@@ -449,7 +449,7 @@ The `pathLenConstraint` _must_ be set by all CA certificates, but _must not_ be 
 
 A _Master_ certificate exists to establish trust between organizations that may want to interconnect their Arrowhead systems.
 It does this by issuing _Organization_ and _Gate_ certificates.
-The former enables organizations to set up their own certificate hierarchies while sharing a common CA with all other organizations.
+The former enables organizations to set up their own certificate hierarchies while sharing a common CA with other organizations.
 The latter kind enables all those organizations to trust a special kind of broker system, which facilitates negotiating connections between organizations.
 
 The Eclipse Arrowhead project _should_ maintain an authoritative Master certificate that _may_ be used for non-private Arrowhead installations.
@@ -494,7 +494,7 @@ If the certificate will be used to automatically respond to CSRs via a network a
 
 ### 2.3 Gate Profile
 
-A _Gate_ certificate is associated with some form of message broker or bus that exists to guarantee delivery of messages between the local clouds of the same or distinct organizations.
+A _Gate_ certificate is associated with a message broker or bus that exists to guarantee delivery of messages between the local clouds of distinct organizations.
 Its existence means that such messages can sent over a secure transport.
 
 #### 2.3.1 `issuer`
@@ -535,6 +535,8 @@ The following extensions _must_ be used and configured as described:
 ### 2.9 Operator Profile
 
 ## 3. Algorithms, Key Lengths and Other Security Details
+
+https://www.enisa.europa.eu/publications/algorithms-key-size-and-parameters-report-2014
 
 - Use fingerprints to identify certificate owners, not subject names.
 
