@@ -97,6 +97,7 @@ Each diagram box represents a profile.
 The arrows in the diagram are to be read as "issued by", meaning that the every certificate adhering to the profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
 
 In this section, we begin by considering the X.509 format itself, after which we outline the Master, Gate, Organization, Local Cloud, On-Boarding, Device, System and Operator profiles.
+Each profile is described in terms of its (a) purpose, (b) issuer, (c) subject name and (d) extensions.
 The details included in this section are intended to be enough to allow for the correct parameterization of certificates, but are unlikely to be sufficient for implementing software for handling them.
 If the latter is relevant, please refer to RFC 5280, X.509, X.501, X.690 and ASN.1.
 
@@ -323,10 +324,11 @@ KeyIdentifier ::= OCTET STRING
 
 RFC 5280 _requires_ that `AuthorityKeyIdentifier` extension is included in all CA certificates except for self-signed such.
 The `keyIdentifier` of the `AuthorityKeyIdentifier` extension of a given certificate _must_ match the `SubjectKeyIdentifier` of its issuer's certificate, or _may_ be omitted if the certificate is self-signed.
-Use of the `authorityCertIssuer` and `authorityCertSerialNumber` fields of `AuthorityKeyIdentifier` is optional.
+Use of the `authorityCertIssuer` and `authorityCertSerialNumber` fields of `AuthorityKeyIdentifier` is _not recommended_.
 If a self-signed certificate leaves the `authorityCertIssuer` and `authorityCertSerialNumber` fields unspecified, it may omit the `AuthorityKeyIdentifier` extension entirely.
 RFC 5280 further _requires_ that all but end entity certificates use the `SubjectKeyIdentifier` extension.
 Its value _should_ be the the cryptographic hash of the `subjectPublicKey` value (excluding the tag, length, and number of unused bits) of the `subjectPublicKeyInfo` field.
+The extensions _must not_ be marked as critical.
 
 The __Key Usage__ and __Extended Key Usage__ extensions are defined as follows:
 
@@ -350,13 +352,14 @@ KeyPurposeId ::= OBJECT IDENTIFIER
 
 The `KeyUsage` extension is a set of bit flags used to indicate various ways in which a certificate _may_ be used.
 Please refer to RFC 5280 Section 4.2.1.3 for descriptions of each bit flag.
-The extension _must_ be used in all certificates.
+The extension _must_ be used in all certificates and _must_ be marked as critical.
 How to set it is outlined in the section specific to each particular certificate profile.
 
 The `ExtKeyUsageSyntax` extension has the same purpose, but is open-ended in the sense that it allows for any OID to be used as an indication of what a certain certificate _may_ be used for.
 RFC 5280 lists six such identifiers, out of which two has particular bearing on this document, namely the `serverAuth` (OID `1.3.6.1.5.5.7.3.1`) and `clientAuth` (OID `1.3.6.1.5.5.7.3.2`) identifiers, which indicate that the certificate holder should be allowed to act as a World Wide Web TLS server and client, respectively.
 The extension _must_ be used in all end entity certificates, as well in the certificates of the CAs that handle CSRs directly via network application interfaces.
 The `serverAuth` and `clientAuth` identifiers _must_ be included.
+The extension _should not_ be marked as _critical_.
 Other identifiers _may_ be used.
 
 #### 2.1.9.2 Policy Extensions
@@ -392,12 +395,14 @@ GeneralName ::= CHOICE {
 }
 ```
 
-The `SubjectAltName` extension _must_ be used by all end entity certificates and must identify at least one DNS name or IP address.
-The extension _must_ be used for CA certificates that handles CSRs directly via network application interfaces.
+The `SubjectAltName` extension _must_ be used by all end entity certificates and _must_ identify at least one DNS name or IP address.
+The extension _must_ also be used for CA certificates that handles CSRs directly via network application interfaces.
 Use of the `IssuerAltName` is _optional_.
+Both extensions _should_ be marked as non-critical.
 
 The __Name Constraints__ extension makes it possible for a CA to restrict the set of values allowed for the `subject` and `SubjectAltName` fields in issued certificates.
 The extension _may_ be used.
+It _must_ be marked as critical if used.
 Please refer to RFC 5280 Section 4.2.1.10 for more details.
 
 #### 2.1.9.4 CRL Extensions
@@ -421,6 +426,7 @@ Those provisions _should_ be used when possible.
 
 The __Subject Directory Attributes__ allows for arbitrary identification attributes, such as nationality, to be associated with the `subject` of a certificate.
 It _may_ be used.
+It _must_ be marked as non-critical if used.
 
 The __Basic Constraints__ extension allows for it to be denoted whether or not a given certificate belongs to a CA, as well as how many intermediary CAs may exist below it in any given certificate chain.
 The extension is defined as follows:
@@ -432,33 +438,54 @@ BasicConstraints ::= SEQUENCE {
 }
 ```
 
-The extension _must_ be used by all Arrowhead-compliant certificates.
-The `pathLenConstraint` _must_ be set by all CA certificates.
-It _must not_ be set by end entity certificates.
+The extension _must_ be used and marked critical by all Arrowhead-compliant certificates.
+The `pathLenConstraint` _must_ be set by all CA certificates, but _must not_ be set by end entity certificates.
 
 ### 2.2 Master Profile
+
+A _Master_ certificate exists to establish trust between organizations that may want to interconnect their Arrowhead systems.
+It does this by issuing _Organization_ and _Gate_ certificates.
+The former kind of certificate enables organizations to set up their own certificate hierarchies while sharing a common CA with all other organizations.
+The latter kind enables all those organizations to trust a special kind of broker system, which facilitates negotiating connections between organizations.
+
+The Eclipse Arrowhead project _should_ maintain an authoritative Master certificate that _may_ be used for non-private Arrowhead installations.
+Other entities _may_ setup and maintain their own Master certificates as needed.
 
 #### 2.2.1 `issuer`
 
 _May_ be self-signed or issued by an RFC 5280-compliant CA.
 
+__Security notice__.
+In the case of a Master being issued by a widely trusted World Wide Web CA, entities with the Master in their certificate chains could be made able to serve HTTP(S) traffic to regular web browsers without any additional certificate distribution.
+It could also make it possible for improperly configured systems to establish secure connections with unauthorized systems.
+Having CAs above a Master provides for new opportunities and new risks at the same time, for which reason it may or may not be desirable.
+
 #### 2.2.2 `subject`
 
-| Attribute Type    | OID        | Required | Value |
-|:------------------|:-----------|:---------|:------|
-| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization.
-| DN Qualifier (DN) | `2.5.4.46` | Yes      | `master`.
-| Common Name (CN)  | `2.5.4.3`  | Yes      | Human-readable name of certificate.
+The subject field DN _must_ contain the following attributes exactly once, either in the same or different RDNs:
+
+| Attribute Type    | OID        | Value |
+|:------------------|:-----------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | `master`.
+| Common Name (CN)  | `2.5.4.3`  | Human-readable name of certificate, such as `LTU Master RSA 2021`.
 
 #### 2.2.3 `extensions`
 
+The following extensions _must_ be used and configured as described:
+
 | Extension                | OID         | Critical | Value |
 |:-------------------------|:------------|:---------|:------|
-| Authority Key Identifier | `2.5.29.35` | No       | Required only if not self-signed. See Section 2.1.9.1.
-| Subject Key Identifier   | `2.5.29.14` | No       | See Section 2.1.9.1.
+| Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. Omit field if self-signed. See Section 2.1.9.1.
+| Subject Key Identifier   | `2.5.29.14` | No       | Hash of subject public key. See Section 2.1.9.1.
 | Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 2`. See Section 2.1.9.6.
-| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. If responding to CSRs via network application interface, then `digitalSignature(0)` and `keyEncipherment(2)` _must_ also be set. See Section 2.1.9.1.
-| ExtendedKeyUsage         | `2.5.29.37` | No       | If responding to CSRs via network application interface, then `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1. |
+| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.1.
+
+If the certificate will be used to automatically respond to CSRs via a network application interface, the following must also be present:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.1.
+| ExtendedKeyUsage         | `2.5.29.37` | No       | Both`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
 
 ### 2.3 Gate Profile
 
