@@ -232,9 +232,13 @@ See RFC 5280 Section 4.1.2.4 for more attributes that _should_ be supported.
 | Serial Number                | `SN`         | `2.5.4.5`
 | State or Province Name       | `ST`         | `2.5.4.8`
 
-All end entity certificates _must_ contain a `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters, which is to say that they match the regular expression `^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,62}$`.
-While up to 62 characters are allowed, however, we recommend that names be kept under 20 characters when possible to avoid exceeding the 255 character limit of DNS when including them in domain names.
-The reason for the DNS adherence is to guarantee compatibility with DNS-SD and other naming schemas related to Arrowhead (https://ieeexplore.ieee.org/document/8972250).
+Every certificate _must_ contain exactly one `subject` _Distinguished Name Qualifier_ (`DN`) that identifies the profile it adheres to.
+The actual identifiers are stated in Sections 2.2 to 2.10.
+
+In addition, all end entity and Local Cloud certificates _must_ contain exactly one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
+Note that DNS labels _must not_ contain dots, or any other character than the alphanumeric and dash.
+While names _may_ use 62 characters, we _recommend_ that names be kept at 20 characters or less.
+The `CN` field value _must_, furthermore, be unique among all certificates issued by the same CA that have the same profile.
 
 #### 2.1.7 `subjectPublicKeyInfo`
 
@@ -356,11 +360,11 @@ The extension _must_ be used in all certificates and _must_ be marked as critica
 How to set it is outlined in the section specific to each particular certificate profile.
 
 The `ExtKeyUsageSyntax` extension has the same purpose, but is open-ended in the sense that it allows for any OID to be used as an indication of what a certain certificate _may_ be used for.
-RFC 5280 lists six such identifiers, out of which two has particular bearing on this document, namely the `serverAuth` (OID `1.3.6.1.5.5.7.3.1`) and `clientAuth` (OID `1.3.6.1.5.5.7.3.2`) identifiers, which indicate that the certificate holder should be allowed to act as a World Wide Web TLS server and client, respectively.
+RFC 5280 lists six such purpose identifiers, out of which two has particular bearing on this document, namely the `serverAuth` (OID `1.3.6.1.5.5.7.3.1`) and `clientAuth` (OID `1.3.6.1.5.5.7.3.2`) identifiers, which indicate that the certificate holder must be able to respond to TLS server and client authorization requests, respectively.
 The extension _must_ be used in all end entity certificates, as well in the certificates of the CAs that handle CSRs directly via network application interfaces.
 The `serverAuth` and `clientAuth` identifiers _must_ be included.
 The extension _should not_ be marked as _critical_.
-Other identifiers _may_ be used.
+Other purpose identifiers _may_ be used.
 
 #### 2.1.9.2 Policy Extensions
 
@@ -412,15 +416,15 @@ These extensions _should not_ be used to facilitate the revocation of end entity
 They _may_ be used for revoking CA certificates.
 
 Eclipse Arrowhead comes with its own certificate revocation procedure via its _Certificate Authority_ system.
-Its use is _recommended_ for revoking and verifying the validity of end entity certificates.
+Its use is _recommended_ for revoking and verifying the validity of On-Boarding, Device, System and Operator certificates.
 
 #### 2.1.9.5 Information Extension
 
 The information extensions allows various types of data sources or services to be associated with the certificate holder.
 These extensions _should not_ be used.
 
-Eclipse Arrowhead a service-oriented architecture with its own provisions for metadata distribution and service management.
-Those provisions _should_ be used when possible.
+Eclipse Arrowhead has its own provisions for metadata distribution and service management, via the _Service Registry_ system, _Gatekeeper_ system, and other.
+Those provisions _should_ be used.
 
 #### 2.1.9.6 Other Extensions
 
@@ -445,7 +449,7 @@ The `pathLenConstraint` _must_ be set by all CA certificates, but _must not_ be 
 
 A _Master_ certificate exists to establish trust between organizations that may want to interconnect their Arrowhead systems.
 It does this by issuing _Organization_ and _Gate_ certificates.
-The former kind of certificate enables organizations to set up their own certificate hierarchies while sharing a common CA with all other organizations.
+The former enables organizations to set up their own certificate hierarchies while sharing a common CA with all other organizations.
 The latter kind enables all those organizations to trust a special kind of broker system, which facilitates negotiating connections between organizations.
 
 The Eclipse Arrowhead project _should_ maintain an authoritative Master certificate that _may_ be used for non-private Arrowhead installations.
@@ -467,7 +471,7 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
 | DN Qualifier (DN) | `2.5.4.46` | `master`.
-| Common Name (CN)  | `2.5.4.3`  | Human-readable name of certificate, such as `LTU Master RSA 2021`.
+| Common Name (CN)  | `2.5.4.3`  | Human-readable name of certificate, such as `LTU RSA 2021`.
 
 #### 2.2.3 `extensions`
 
@@ -485,30 +489,38 @@ If the certificate will be used to automatically respond to CSRs via a network a
 | Extension                | OID         | Critical | Value |
 |:-------------------------|:------------|:---------|:------|
 | Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.1.
-| ExtendedKeyUsage         | `2.5.29.37` | No       | Both`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.3.
 
 ### 2.3 Gate Profile
 
+A _Gate_ certificate is associated with some form of message broker or bus that exists to guarantee delivery of messages between the local clouds of the same or distinct organizations.
+Its existence means that such messages can sent over a secure transport.
+
 #### 2.3.1 `issuer`
 
-_Must_ be issued by a _Master_ certificate.
+_Must_ be issued by a Master certificate.
 
 #### 2.3.2 `subject`
 
-| Attribute Type    | OID        | Required | Value |
-|:------------------|:-----------|:---------|:------|
-| Organization (O)  | `2.5.4.6`  | No       | Human-readable name of owning organization. |
-| DN Qualifier (DN) | `2.5.4.46` | Yes      | `gate`. | 
-| Common Name (CN)  | `2.5.4.3`  | Yes      | A valid DNS name label of 1 to 62 characters. |
+The subject field DN _must_ contain the following attributes exactly once, either in the same or different RDNs:
+
+| Attribute Type    | OID        | Value |
+|:------------------|:-----------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | `gate`.
+| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label, such as `mqtt-04`. See Section 2.1.6.
 
 #### 2.3.3 `extensions`
 
+The following extensions _must_ be used and configured as described:
+
 | Extension                | OID         | Critical | Value |
 |:-------------------------|:------------|:---------|:------|
-| Authority Key Identifier | `2.5.29.35` | No       | See Section 2.1.9.1.
+| Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
 | Basic Constraints        | `2.5.29.19` | Yes      | `cA: false`. See Section 2.1.9.6.
 | Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set. See Section 2.1.9.1.
-| ExtendedKeyUsage         | `2.5.29.37` | No       | `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1. |
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name through which the system can be reached. See Section 2.1.9.3.
 
 ### 2.4 Organization Profile
 
