@@ -418,7 +418,7 @@ They _may_ be used for revoking CA certificates.
 Eclipse Arrowhead comes with its own certificate revocation procedure via its _Certificate Authority_ system.
 Its use is _recommended_ for revoking and verifying the validity of On-Boarding, Device, System and Operator certificates.
 
-#### 2.1.9.5 Information Extension
+#### 2.1.9.5 Information Extensions
 
 The information extensions allows various types of data sources or services to be associated with the certificate holder.
 These extensions _should not_ be used.
@@ -524,7 +524,75 @@ The following extensions _must_ be used and configured as described:
 
 ### 2.4 Organization Profile
 
+An _Organization_ certificate is maintained by a single organization, allowing it to manage the certificates of its own local clouds.
+
+#### 2.4.1 `issuer`
+
+_Must_ be issued by a Master certificate.
+
+#### 2.4.2 `subject`
+
+The subject field DN _must_ contain the following attributes exactly once, either in the same or different RDNs:
+
+| Attribute Type    | OID        | Value |
+|:------------------|:-----------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | `organization`.
+| Common Name (CN)  | `2.5.4.3`  |  A valid DNS name label, such as `company-rsa-2021`.
+
+#### 2.4.3 `extensions`
+
+The following extensions _must_ be used and configured as described:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
+| Subject Key Identifier   | `2.5.29.14` | No       | Hash of subject public key. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 1`. See Section 2.1.9.6.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.1.
+
+If the certificate will be used to automatically respond to CSRs via a network application interface, the following must also be present:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.1.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.3.
+
 ### 2.5 Local Cloud Profile
+
+An _Local Cloud_ certificate is maintained by a single local cloud, enabling it to issue end entity certificates for on-boarding and on-boarded devices, as well as for systems and operators.
+
+#### 2.4.1 `issuer`
+
+_Must_ be issued by an Organization certificate.
+
+#### 2.4.2 `subject`
+
+The subject field DN _must_ contain the following attributes exactly once, either in the same or different RDNs:
+
+| Attribute Type    | OID        | Value |
+|:------------------|:-----------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | `localcloud`.
+| Common Name (CN)  | `2.5.4.3`  |  A valid DNS name label, such as `pumping-station-04`.
+
+#### 2.4.3 `extensions`
+
+The following extensions _must_ be used and configured as described:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
+| Subject Key Identifier   | `2.5.29.14` | No       | Hash of subject public key. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 0`. See Section 2.1.9.6.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.1.
+
+If the certificate will be used to automatically respond to CSRs via a network application interface, the following must also be present:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.1.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.3.
 
 ### 2.6 On-Boarding Profile
 
