@@ -536,9 +536,46 @@ The following extensions _must_ be used and configured as described:
 
 ## 3. Algorithms, Key Lengths and Other Security Details
 
-https://www.enisa.europa.eu/publications/algorithms-key-size-and-parameters-report-2014
+Every X.509 certificate must be configured to use a particular _signature scheme_, as mentioned in Section 2.1.3, which typically consists of a signature algorithm and a secure hash algorithm.
+In addition, if a given certificate is used with a protocol such as TLS, that signature scheme will be part of a _cipher suite_, which also likely will include a key exchange algorithm and a block or stream cipher.
+Choosing these schemes poorly can lead to severe security vulnerabilities.
 
-- Use fingerprints to identify certificate owners, not subject names.
+Every organization that depends critically on cryptographic algorithms for any of their operations _should_ make it a priority to ensure they have access to their own experts that can help them choose cryptographic primitives and manage their keys and other cryptographic assets.
+That being said, there are several credible organizations that publish reports regarding what signature and cipher suites to use, such as NIST, ENSIA and IETF.
+The latter of the three published RFC 7525 (https://datatracker.ietf.org/doc/html/rfc7525) in May 2015, which recommends that the following four cipher suites be used with TLS:
+
+1. TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+    - __Key Exchange__: Diffie-Hellman Ephemeral (DHE)
+    - __Authentication__: Rivest Shamir Adleman (RSA)
+    - __Encryption__: Advanced Encryption Standard with 128-bit key in Galois/Counter mode (AES 128 GCM)
+    - __Hash__: Secure Hash Algorithm 256 (SHA256)
+2. TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    - __Key Exchange__: Elliptic Curve Diffie-Hellman Ephemeral (ECDHE)
+    - __Authentication__: Rivest Shamir Adleman (RSA)
+    - __Encryption__: Advanced Encryption Standard with 128-bit key in Galois/Counter mode (AES 128 GCM)
+    - __Hash__: Secure Hash Algorithm 256 (SHA256)
+3. TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+    - __Key Exchange__: Diffie-Hellman Ephemeral (DHE)
+    - __Authentication__: Rivest Shamir Adleman (RSA)
+    - __Encryption__: Advanced Encryption Standard with 256-bit key in Galois/Counter mode (AES 256 GCM)
+    - __Hash__: Secure Hash Algorithm 384 (SHA384)
+4. TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    - __Key Exchange__: Elliptic Curve Diffie-Hellman Ephemeral (ECDHE)
+    - __Authentication__: Rivest Shamir Adleman (RSA)
+    - __Encryption__: Advanced Encryption Standard with 256-bit key in Galois/Counter mode (AES 256 GCM)
+    - __Hash__: Secure Hash Algorithm 384 (SHA384)
+
+RSA keys _should not_ have lengths of less than 2048 bits.
+In a 2018 report by the Ecrypt project (https://www.ecrypt.eu.org/csa/documents/D5.4-FinalAlgKeySizeProt.pdf), an effective cryptographic strength of 128 bits is recommended for new deployments in the following years (see also https://doi.org/10.6028/NIST.SP.800-57pt1r5 and https://www.enisa.europa.eu/publications/algorithms-key-size-and-parameters-report-2014).
+According to their own estimates, that requires that RSA be used with a key length of 3072-bits.
+
+If following the RFC 7525 recommendation, RSA with SHA _should_ be used as signature algorithm in any created X.509 certificates, where 2048-bit or 3072-bit keys be used with RSA and either SHA256 or SHA384 be used.
+
+The above recommendations are _general_, in the sense that no particular assumptions are made about the setting in which the device employing the signature or cipher suite is located.
+We understand that many Arrowhead installations will involve hardware with limited computational capabilities, which may not be able to handle primitives of the cryptographic strengths we have mentioned.
+The Eclipse Arrowhead project will publish summaries of recommendations for such and other settings in the future.
+
+Note that all TLS versions prior to 1.2 are deprecated, as per RFC 8996.
 
 ## 4. Certificate Creation and Distribution
 
