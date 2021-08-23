@@ -235,10 +235,10 @@ See RFC 5280 Section 4.1.2.4 for more attributes that _should_ be supported.
 Every certificate _must_ contain exactly one `subject` _Distinguished Name Qualifier_ (`DN`) that identifies the profile it adheres to.
 The actual identifiers are stated in Sections 2.2 to 2.10.
 
-In addition, all end entity and Local Cloud certificates _must_ contain exactly one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
+In addition, each certificates _must_ contain exactly one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
 Note that DNS labels _must not_ contain dots, or any other character than the alphanumeric and dash.
 While names _may_ use 62 characters, we _recommend_ that names be kept at 20 characters or less.
-The `CN` field value _must_, furthermore, be unique among all certificates issued by the same CA that have the same profile.
+The `CN` field value _must_, furthermore, be unique among all certificates issued by the same CA with same Distinguished Name Qualifier (`DN`).
 
 #### 2.1.7 `subjectPublicKeyInfo`
 
@@ -471,7 +471,7 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
 | DN Qualifier (DN) | `2.5.4.46` | `master`.
-| Common Name (CN)  | `2.5.4.3`  | Human-readable name of certificate, such as `LTU RSA 2021`.
+| Common Name (CN)  | `2.5.4.3`  |  A valid DNS name label, such as `ltu-rsa-2021`.
 
 #### 2.2.3 `extensions`
 
