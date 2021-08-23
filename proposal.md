@@ -69,30 +69,8 @@ The words __must__, __must not__, __required__, __should__, __should not__, __re
 
 There are eight certificate profiles defined in this document, depicted in the following diagram:
 
-```
-                          +---------------+
-                          |    Master     |
-                          +---------------+
-                                  A
-                                  |
-                                  +--------------------+
-                                  |                    |
-                          +-------+-------+    +-------+-------+ 
-                          | Organization  |    |     Gate      | 
-                          +---------------+    +---------------+ 
-                                  A
-                                  |
-                          +-------+-------+
-                          |  Local Cloud  |
-                          +---------------+
-                                  A
-                                  |
-       +-----------------+--------+--------+-----------------+
-       |                 |                 |                 | 
-+------+------+   +------+------+   +------+------+   +------+------+
-| On-Boarding |   |   Device    |   |   System    |   |  Operator   |
-+-------------+   +-------------+   +-------------+   +-------------+
-```
+![Hierarchy of X.509 Profiles](profile-hierarchy.svg)
+
 Each diagram box represents a profile.
 The arrows in the diagram are to be read as "issued by", meaning that the every certificate adhering to the profile from which the arrow extends must be issued (signed) by a certificate with the profile pointed to.
 
