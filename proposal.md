@@ -61,6 +61,22 @@ The standard is used to describe the structure of X.509 certificates, which _mus
 - __Object Identifier (OID)__: A hierarchical and universally unique identifier, useful for identifying parts of ASN.1 messages.
 - __Octet__: An 8-bit byte.
 
+#### 1.2.5 TLS
+
+_Transport Layer Security_ (TLS), an IETF (Internet Engineering Task-Force) standard for establishing secure connection over untrusted transports.
+Used in tandem with X.509 to establish that the identities of any connecting parties can be mutually authenticated.
+
+- __Authentication Algorithm__: An asymmetric, or _public key_, encryption algorithm used to establish a degree of confidence in the identity of a counter-party.
+- __Cipher Suite__: A four-part set consisting of a _key exchange_, _authentication_, _encryption_ and _hash_ algorithm. Such a suite must be agreed upon for a TLS connection to be possible to establish.
+- __Encryption Algorithm__: A symmetric encryption algorithm, typically used to make data opaque in transit between a sender and a recipient. Also referred to as _stream_ or _block_ cipher, depending on its mode of operation.
+- __Key Exchange Algorithm__: An algorithm used by parties for exchanging _public keys_ as part of preparing for secure communication.
+- __Hash Algorithm__: A function that produces an arbitrary fixed-size output for any given arbitrarily sized input. The same input always produces the same output. Used to reduce the size of public key signatures.
+- __Party__: Either end of a two-way communication.
+- __Public key__: The public component of a public/private key pair. Knowledge of the public key allows for messages to be encrypted such that only the possessor of the private key can decrypt them, and vice versa. Used to produce _signatures_ and to _share secrets_.
+- __Shared Secret__: The input to an _encryption algorithm_ that has been shared between two parties such that no other party can see it.
+- __Signature__: The private key encryption of a hashed object, which most significantly can be an X.509 certificate. Any party with the corresponding public key, hashing algorithm and object can verify that the signature was created by the possessor of the private key and that the certificate has not been tampered with.
+- __Signature Suite__: A two-part set consisting of an _authentication_ and _hash_ algorithm. Used to produce and validate _signatures_.
+
 ### 1.3 Conventions
 
 The words __must__, __must not__, __required__, __should__, __should not__, __recommended__, __may__, and __optional__ in this document are to be interpreted as follows: __must__ and __required__ denote absolute requirements that must be adhered to for a certificate to be considered compliant to a given profile; __must not__ denotes an absolute prohibition; __should__, __should not__ and __recommended__ denote recommendations that should be deviated from only if special circumstances make it relevant; and, finally, __may__ and __optional__ denote something being truly optional.
@@ -106,8 +122,7 @@ The ASN.1 syntax of the third version of the X.509 certificate format is defined
 
 The `Certificate` structure itself consists only of a `TBSCertificate`, a signature algorithm identifier and a concrete signature.
 The signature is meant to be produced by the issuer of the certificate and serves to protect the integrity of the certificate under the assumption that the issuer is trusted.
-All data protected by the signature is collected in the `TBSCertificate`.
-Each of its fields is described in the following subsections.
+All data protected by the signature is collected in the `TBSCertificate`, the fields of which are described in the following subsections.
 
 #### 2.1.1 `version`
 
@@ -127,10 +142,11 @@ Note that the serial number is signed and must be positive, which means that the
 
 #### 2.1.3 `signature`
 
-An identifier associated with the cryptographic signature algorithm used to produce the `signatureValue` in the enclosing `Certificate`, as well as any parameters made relevant by the algorithm type.
-Examples of algorithms could be _RSA with SHA256_ or _ED25519_.
+Identifies the signature suite used to produce the `signatureValue` in the enclosing `Certificate`, as well as any parameters made relevant by the suite.
+Examples of suites could be _RSA with SHA256_ or _ED25519_.
+This field must contain the same suite as the `signatureAlorithm` field in the enclosing `Certificate`, as described in the beginning of Section 2.1.
 
-This field must contain the same algorithm as the `signatureAlorithm` field in the enclosing `Certificate`, as described in the beginning of Section 2.1.
+See Section 3 for information about selecting cryptographic algorithms.
 
 #### 2.1.4 `issuer`
 
@@ -230,7 +246,7 @@ SubjectPublicKeyInfo ::= SEQUENCE {
 }
 ```
 
-See Section 3 for more information about what public key algorithms should be used and supported.
+See Section 3 for information about selecting cryptographic algorithms.
 
 #### 2.1.8 `issuerUniqueID` and `subjectUniqueID`
 
@@ -259,9 +275,10 @@ RFC 5280 explicitly outlines 17 different X.509 extensions, listed by category b
 
 | Extension                    | `extnID` (OID)       | Brief Description |
 |:-----------------------------|:---------------------|:------------------|
-| __Key Extensions__           |                      |
+| __Identifier Extensions__    |                      |
 | Authority Key Identifier     | `2.5.29.35`          | Identifier uniquely associated with certificate issuer.
 | Subject Key Identifier       | `2.5.29.14`          | Identifier uniquely associated with certificate subject.
+| __Key Usage Extensions__     |                      |
 | Key Usage                    | `2.5.29.15`          | Public key usage restrictions.
 | Extended Key Usage           | `2.5.29.37`          | Additional public key usage restrictions.
 | __Policy Extensions__        |                      |
@@ -285,7 +302,7 @@ RFC 5280 explicitly outlines 17 different X.509 extensions, listed by category b
 
 Each category of extensions is described in the following subsections.
 
-#### 2.1.9.1 Key Extensions
+#### 2.1.9.1 Identifier Extensions
 
 The __Authority Key Identifier__ and __Subject Key Identifier__ extensions are used to identify the public key of the issuer and subject of a given certificate, respectively.
 The extensions are defined as follows:
@@ -311,6 +328,8 @@ If a self-signed certificate leaves the `authorityCertIssuer` and `authorityCert
 RFC 5280 further _requires_ that all but end entity certificates use the `SubjectKeyIdentifier` extension.
 Its value _should_ be the the cryptographic hash of the `subjectPublicKey` value (excluding the tag, length, and number of unused bits) of the `subjectPublicKeyInfo` field.
 The extensions _must not_ be marked as critical.
+
+#### 2.1.9.2 Key Usage Extensions
 
 The __Key Usage__ and __Extended Key Usage__ extensions are defined as follows:
 
@@ -344,14 +363,13 @@ The `serverAuth` and `clientAuth` identifiers _must_ be included.
 The extension _should not_ be marked as _critical_.
 Other purpose identifiers _may_ be used.
 
-#### 2.1.9.2 Policy Extensions
+#### 2.1.9.3 Policy Extensions
 
 In the context of X.509 and RFC 5280, a _policy_ is a legal document that binds the owner of a certificate and, potentially, all certificates issued by that certificate to certain legal obligations.
 The four policy extensions defined by RFC 5280 _may_ be used to ensure that every certificate in a given certificate chain have accepted some policies of concern.
 Please refer to RFC 5280 for more details about these extensions.
-Their use is _optional_.
 
-#### 2.1.9.3 Name Extensions
+#### 2.1.9.4 Name Extensions
 
 The __Subject Alternative Name__ and __Issuer Alternative Name__ allows for additional identities to be associated with a given `subject` or `issuer` name.
 Such additional identities significantly include DNS names, IP addresses and e-mail addresses.
@@ -387,16 +405,16 @@ The extension _may_ be used.
 It _must_ be marked as critical if used.
 Please refer to RFC 5280 Section 4.2.1.10 for more details.
 
-#### 2.1.9.4 CRL Extensions
+#### 2.1.9.5 CRL Extensions
 
 The CRL extensions facilitate a mechanism for revoking certificates that are still valid and distributing information about those revocations.
-These extensions _should not_ be used to facilitate the revocation of end entity certificates.
-They _may_ be used for revoking CA certificates.
+These extensions _should not_ be used to facilitate the revocation of on-On-Boarding, Device, System and Operator certificates.
+They _may_ be used for revoking certificates of the other profiles.
 
 Eclipse Arrowhead comes with its own certificate revocation procedure via its _Certificate Authority_ system.
 Its use is _recommended_ for revoking and verifying the validity of On-Boarding, Device, System and Operator certificates.
 
-#### 2.1.9.5 Information Extensions
+#### 2.1.9.6 Information Extensions
 
 The information extensions allows various types of data sources or services to be associated with the certificate holder.
 These extensions _should not_ be used.
@@ -404,7 +422,7 @@ These extensions _should not_ be used.
 Eclipse Arrowhead has its own provisions for metadata distribution and service management, via the _Service Registry_ system, _Gatekeeper_ system, and other.
 Those provisions _should_ be used.
 
-#### 2.1.9.6 Other Extensions
+#### 2.1.9.7 Other Extensions
 
 The __Subject Directory Attributes__ allows for arbitrary identification attributes, such as nationality, to be associated with the `subject` of a certificate.
 It _may_ be used.
@@ -459,16 +477,16 @@ The following extensions _must_ be used and configured as described:
 |:-------------------------|:------------|:---------|:------|
 | Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. Omit field if self-signed. See Section 2.1.9.1.
 | Subject Key Identifier   | `2.5.29.14` | No       | Hash of subject public key. See Section 2.1.9.1.
-| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 2`. See Section 2.1.9.6.
-| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 2`. See Section 2.1.9.7.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.2.
 
 If the certificate will be used to automatically respond to CSRs via a network application interface, the following must also be present:
 
 | Extension                | OID         | Critical | Value |
 |:-------------------------|:------------|:---------|:------|
-| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.1.
-| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
-| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.3.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.2.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.4.
 
 ### 2.3 Gate Profile
 
@@ -495,10 +513,10 @@ The following extensions _must_ be used and configured as described:
 | Extension                | OID         | Critical | Value |
 |:-------------------------|:------------|:---------|:------|
 | Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
-| Basic Constraints        | `2.5.29.19` | Yes      | `cA: false`. See Section 2.1.9.6.
-| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set. See Section 2.1.9.1.
-| Extended Key Usage       | `2.5.29.37` | No       | Purposes `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
-| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name through which the system can be reached. See Section 2.1.9.3.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: false`. See Section 2.1.9.7.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set. See Section 2.1.9.2.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name through which the system can be reached. See Section 2.1.9.4.
 
 ### 2.4 Organization Profile
 
@@ -525,16 +543,16 @@ The following extensions _must_ be used and configured as described:
 |:-------------------------|:------------|:---------|:------|
 | Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
 | Subject Key Identifier   | `2.5.29.14` | No       | Hash of subject public key. See Section 2.1.9.1.
-| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 1`. See Section 2.1.9.6.
-| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 1`. See Section 2.1.9.7.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.2.
 
 If the certificate will be used to automatically respond to CSRs via a network application interface, the following must also be present:
 
 | Extension                | OID         | Critical | Value |
 |:-------------------------|:------------|:---------|:------|
-| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.1.
-| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
-| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.3.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.2.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.4.
 
 ### 2.5 Local Cloud Profile
 
@@ -561,16 +579,16 @@ The following extensions _must_ be used and configured as described:
 |:-------------------------|:------------|:---------|:------|
 | Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
 | Subject Key Identifier   | `2.5.29.14` | No       | Hash of subject public key. See Section 2.1.9.1.
-| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 0`. See Section 2.1.9.6.
-| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: true, pathLenConstraint: 0`. See Section 2.1.9.7.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `keyCertSign(5)` and `cRLSign(6)` _must_ be set. See Section 2.1.9.2.
 
 If the certificate will be used to automatically respond to CSRs via a network application interface, the following must also be present:
 
 | Extension                | OID         | Critical | Value |
 |:-------------------------|:------------|:---------|:------|
-| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.1.
-| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.1.
-| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.3.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.2.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.4.
 
 ### 2.6 On-Boarding Profile
 
@@ -583,9 +601,9 @@ If the certificate will be used to automatically respond to CSRs via a network a
 ## 3. Algorithms, Key Lengths and Other Security Details
 
 Choosing a signature scheme for a certificate poorly can lead to severe security vulnerabilities.
-We _recommend_ that relevant recommendations of credible information security institutes, such as NIST, ENSIA or IETF, be consulted for making choices about algorithms, key lengths and other relevant security details.
+We _recommend_ that credible information security institutes, such as NIST, ENSIA or IETF, be consulted for making choices about algorithms, key lengths and other relevant security details.
 
-Given that no relevant breakthroughs are made or expected in quantum computing, you _may_ chose to follow RFC 7525, which recommends the following four TLS _cipher suites_:
+Given that no relevant breakthroughs are made or expected in quantum computing, you _may_ chose to follow RFC 7525, which recommends the following four TLS cipher suites:
 
 | Key Exchange | Authentication     | Encryption  | Hash   |
 |:-------------|:-------------------|:------------|:-------|
@@ -593,10 +611,6 @@ Given that no relevant breakthroughs are made or expected in quantum computing, 
 | ECDHE        | RSA (2048 or 3072) | AES 128 GCM | SHA256 |
 | DHE          | RSA (2048 or 3072) | AES 256 GCM | SHA384 |
 | ECDHE        | RSA (2048 or 3072) | AES 256 GCM | SHA384 |
-
-Note that all TLS versions prior to 1.2 are deprecated, as per RFC 8996.
-A cipher suite is a collection of cryptographic algorithm used to establish secure connections over untrusted transports.
-The _Authentication_ and _Hash_ algorithms of a cipher suite constitute what is referred to as a _signature scheme_, which must be specified in and used with every created X.509 certificate, as mentioned in Section 2.1.3.
 
 The above recommendations are _general_, in the sense that no particular assumptions are made about the setting in which the device employing the signature or cipher suite is located.
 We understand that many Arrowhead installations will involve hardware with limited computational capabilities, which may not be able to handle primitives of the cryptographic strengths we have mentioned.
