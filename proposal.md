@@ -75,7 +75,7 @@ Used in tandem with X.509 to establish that the identities of any connecting par
 - __Public key__: The public component of a public/private key pair. Knowledge of the public key allows for messages to be encrypted such that only the possessor of the private key can decrypt them, and vice versa. Used to produce _signatures_ and to _share secrets_.
 - __Shared Secret__: The input to an _encryption algorithm_ that has been shared between two parties such that no other party can see it.
 - __Signature__: The private key encryption of a hashed object, which most significantly can be an X.509 certificate. Any party with the corresponding public key, hashing algorithm and object can verify that the signature was created by the possessor of the private key and that the certificate has not been tampered with.
-- __Signature Suite__: A two-part set consisting of an _authentication_ and _hash_ algorithm. Used to produce and validate _signatures_.
+- __Signature Suite__: A two-part set consisting of an _authentication_ and _hash_ algorithm. Used to produce and validate _signatures_. Can be a subset of a _cipher suite_.
 
 ### 1.3 Conventions
 
@@ -173,7 +173,7 @@ Time ::= CHOICE {
 For each of these two dates, the date in question _must_ be encoded as a `UTCTime` if its year is less than or equal to 2049, or as a `GeneralizedTime` if the year is equal to or greater than 2050.
 See Section 4.1.2.5 of RFC 5280 for more details.
 
-The time span denoted by this field _should_ be shorter than the expected lifetime of the entity owning it, if provisions exist for renewing it during its lifetime.
+The time span denoted by this field _should_ be shorter than the expected lifetime of the entity owning it, typically significantly shorter, if provisions exist for renewing it during its lifetime.
 More specific recommendations will be published in other documents of the Eclipse Arrowhead project.
 
 #### 2.1.6 `subject`
@@ -227,9 +227,9 @@ See RFC 5280 Section 4.1.2.4 for more attributes that _should_ be supported.
 | State or Province Name       | `ST`         | `2.5.4.8`
 
 Every certificate _must_ contain exactly one `subject` _Distinguished Name Qualifier_ (`DN`) that identifies the profile it adheres to.
-The actual identifiers are stated in Sections 2.2 to 2.10.
+The actual identifiers are stated in Sections 2.2 to 2.9.
 
-In addition, each certificates _must_ contain exactly one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
+In addition, each certificate _must_ contain exactly one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
 Note that DNS labels _must not_ contain dots, or any other character than the alphanumeric and dash.
 While names _may_ use 62 characters, we _recommend_ that names be kept at 20 characters or less.
 The `CN` field value _must_, furthermore, be unique among all certificates issued by the same CA with same Distinguished Name Qualifier (`DN`).
@@ -486,7 +486,7 @@ If the certificate will be used to automatically respond to CSRs via a network a
 |:-------------------------|:------------|:---------|:------|
 | Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.2.
 | Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
-| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.4.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address, DNS name or other identifier to which CSRs can be sent. See Section 2.1.9.4.
 
 ### 2.3 Gate Profile
 
@@ -516,7 +516,7 @@ The following extensions _must_ be used and configured as described:
 | Basic Constraints        | `2.5.29.19` | Yes      | `cA: false`. See Section 2.1.9.7.
 | Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set. See Section 2.1.9.2.
 | Extended Key Usage       | `2.5.29.37` | No       | Purposes `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
-| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name through which the system can be reached. See Section 2.1.9.4.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address, DNS name or other identifier through which the system can be reached. See Section 2.1.9.4.
 
 ### 2.4 Organization Profile
 
@@ -552,7 +552,7 @@ If the certificate will be used to automatically respond to CSRs via a network a
 |:-------------------------|:------------|:---------|:------|
 | Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.2.
 | Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
-| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.4.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address, DNS name or other identifier to which CSRs can be sent. See Section 2.1.9.4.
 
 ### 2.5 Local Cloud Profile
 
@@ -588,15 +588,130 @@ If the certificate will be used to automatically respond to CSRs via a network a
 |:-------------------------|:------------|:---------|:------|
 | Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set in addition to `5` and `6`. See Section 2.1.9.2.
 | Extended Key Usage       | `2.5.29.37` | No       | Purposes`serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
-| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address or DNS name to which CSRs can be sent. See Section 2.1.9.4.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address, DNS name or other identifier to which CSRs can be sent. See Section 2.1.9.4.
 
 ### 2.6 On-Boarding Profile
 
+An _On-Boarding_ certificate allows for a device in an Arrowhead local cloud to request a new device certificate.
+It is used both or either to provision new devices and/or to facilitate renewal of certificates as they are about to expire.
+Certificates adhering to this profile _must_ only be provided to devices known or assumed to be trustworthy.
+
+#### 2.3.1 `issuer`
+
+_Must_ be issued by a Local Cloud certificate.
+
+#### 2.3.2 `subject`
+
+The subject field DN _must_ contain the following attributes exactly once, either in the same or different RDNs:
+
+| Attribute Type    | OID        | Value |
+|:------------------|:-----------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | `onboarding`.
+| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label. See Section 2.1.6. _Should_ be an at lest 12 character long lowercase alphanumeric identifier, such as `51e41vjoxq8y`, created with a secure random number generator.*
+
+* Given an alphabet of 36 characters (a-z and 0-9), a 12 character identifier provides a search space of close to that of a 62-bit number.
+  In many contexts, this will be enough to hide the number of on-boarding certificates that have been issued by the same local cloud from an adversary with a copy of the certificate.
+
+#### 2.3.3 `extensions`
+
+The following extensions _must_ be used and configured as described:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: false`. See Section 2.1.9.7.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set. See Section 2.1.9.2.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address, DNS name or other identifier through which the owning device can be reached. See Section 2.1.9.4.
+
 ### 2.7 Device Profile
+
+A _Device_ certificate allows for a device in an Arrowhead local cloud to request new system certificates.
+One system certificate is required for each system a given device intends to run.
+Certificates adhering to this profile _must_ only be provided to devices known or assumed to be trustworthy.
+
+#### 2.3.1 `issuer`
+
+_Must_ be issued by a Local Cloud certificate.
+
+#### 2.3.2 `subject`
+
+The subject field DN _must_ contain the following attributes exactly once, either in the same or different RDNs:
+
+| Attribute Type    | OID        | Value |
+|:------------------|:-----------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | `device`.
+| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label, such as `srv-1642`. See Section 2.1.6.
+
+#### 2.3.3 `extensions`
+
+The following extensions _must_ be used and configured as described:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: false`. See Section 2.1.9.7.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set. See Section 2.1.9.2.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address, DNS name or other identifier through which the device can be reached. See Section 2.1.9.4.
 
 ### 2.8 System Profile
 
+A _System_ certificate allows for a device in an Arrowhead local cloud to provide the services associated with a particular system, and/or to act as a service consumer.
+
+#### 2.3.1 `issuer`
+
+_Must_ be issued by a Local Cloud certificate.
+
+#### 2.3.2 `subject`
+
+The subject field DN _must_ contain the following attributes exactly once, either in the same or different RDNs:
+
+| Attribute Type    | OID        | Value |
+|:------------------|:-----------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | `system`.
+| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label, such as `orch-0037`. See Section 2.1.6.
+
+#### 2.3.3 `extensions`
+
+The following extensions _must_ be used and configured as described:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: false`. See Section 2.1.9.7.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set. See Section 2.1.9.2.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address, DNS name or other identifier through which the system can be reached. See Section 2.1.9.4.
+
 ### 2.9 Operator Profile
+
+An _Operator_ certificate allows for a human or computer operator to administer a particular Arrowhead local cloud.
+
+#### 2.3.1 `issuer`
+
+_Must_ be issued by a Local Cloud certificate.
+
+#### 2.3.2 `subject`
+
+The subject field DN _must_ contain the following attributes exactly once, either in the same or different RDNs:
+
+| Attribute Type    | OID        | Value |
+|:------------------|:-----------|:------|
+| DN Qualifier (DN) | `2.5.4.46` | `operator`.
+| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label, such as `15-b32-a`. See Section 2.1.6.
+
+#### 2.3.3 `extensions`
+
+The following extensions _must_ be used and configured as described:
+
+| Extension                | OID         | Critical | Value |
+|:-------------------------|:------------|:---------|:------|
+| Authority Key Identifier | `2.5.29.35` | No       | Hash of issuer public key. See Section 2.1.9.1.
+| Basic Constraints        | `2.5.29.19` | Yes      | `cA: false`. See Section 2.1.9.7.
+| Key Usage                | `2.5.29.15` | Yes      | Bits `digitalSignature(0)` and `keyEncipherment(2)` _must_ be set. See Section 2.1.9.2.
+| Extended Key Usage       | `2.5.29.37` | No       | Purposes `serverAuth` and `clientAuth` _must_ be specified. See Section 2.1.9.2.
+| Subject Alternative Name | `2.5.29.17` | No       | At least one IP address, DNS name or other identifier through which the operator's control system can be reached. See Section 2.1.9.4.
 
 ## 3. Algorithms, Key Lengths and Other Security Details
 
@@ -637,3 +752,5 @@ However, as mobility at a scale that makes this setup a problem is currently dee
 It could be working around by using proxies, negotiating a new certificate every network handover, recording all relevant IP addresses in advance in each certificate, and so on.
 
 ## References
+
+TODO
