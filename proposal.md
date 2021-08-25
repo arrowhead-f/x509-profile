@@ -64,17 +64,17 @@ The standard is used to describe the structure of X.509 certificates, which _mus
 #### 1.2.5 TLS
 
 _Transport Layer Security_ (TLS), an IETF (Internet Engineering Task-Force) standard for establishing secure connection over untrusted transports.
-Used in tandem with X.509 to establish that the identities of any connecting parties can be mutually authenticated.
+Used in tandem with X.509 to establish that the identities of any connecting parties can be authenticated.
 
 - __Authentication Algorithm__: An asymmetric, or _public key_, encryption algorithm used to establish a degree of confidence in the identity of a counter-party.
-- __Cipher Suite__: A four-part set consisting of a _key exchange_, _authentication_, _encryption_ and _hash_ algorithm. Such a suite must be agreed upon for a TLS connection to be possible to establish.
-- __Encryption Algorithm__: A symmetric encryption algorithm, typically used to make data opaque in transit between a sender and a recipient. Also referred to as _stream_ or _block_ cipher, depending on its mode of operation.
+- __Cipher Suite__: A four-part set consisting of a _key exchange_, _authentication_, _encryption_ and _hash_ algorithm. Such a suite must be agreed upon for a TLS connection to be possible to establish. The _authentication_ and _hash_ algorithms form a _signature suite_.
+- __Encryption Algorithm__: A symmetric encryption algorithm, typically used to make data opaque in transit between a sender and a recipient. Can also be referred to as a _stream_ or _block_ cipher, depending on its mode of operation.
 - __Key Exchange Algorithm__: An algorithm used by parties for exchanging _public keys_ as part of preparing for secure communication.
-- __Hash Algorithm__: A function that produces an arbitrary fixed-size output for any given arbitrarily sized input. The same input always produces the same output. Used to reduce the size of public key signatures.
+- __Hash Algorithm__: A function that produces an arbitrary fixed-size output for any given arbitrarily sized input. The same input always produces the same output. Used to reduce the size of public key signatures, among other things.
 - __Party__: Either end of a two-way communication.
 - __Public key__: The public component of a public/private key pair. Knowledge of the public key allows for messages to be encrypted such that only the possessor of the private key can decrypt them, and vice versa. Used to produce _signatures_ and to _share secrets_.
 - __Shared Secret__: The input to an _encryption algorithm_ that has been shared between two parties such that no other party can see it.
-- __Signature__: The private key encryption of a hashed object, which most significantly can be an X.509 certificate. Any party with the corresponding public key, hashing algorithm and object can verify that the signature was created by the possessor of the private key and that the certificate has not been tampered with.
+- __Signature__: The private key encryption of a hashed object, which most significantly can be an X.509 certificate. Any party with the corresponding public key, hashing algorithm and hashed object can verify that the signature was created by the possessor of the private key and that the object has not been tampered with.
 - __Signature Suite__: A two-part set consisting of an _authentication_ and _hash_ algorithm. Used to produce and validate _signatures_. Can be a subset of a _cipher suite_.
 
 ### 1.3 Conventions
@@ -731,7 +731,30 @@ The above recommendations are _general_, in the sense that no particular assumpt
 We understand that many Arrowhead installations will involve hardware with limited computational capabilities, which may not be able to handle primitives of the cryptographic strengths we have mentioned.
 The Eclipse Arrowhead project will publish summaries of recommendations for such and other settings in the future.
 
-## 4. Certificate Creation and Distribution
+## 4. Certificate Life-Cycle Management
+
+Certificates must be created, distributed, replaced as they expire and, sometimes, revoked before they expire.
+If these tasks are handled without care, it can lead to serious security vulnerabilities.
+To help making this handling as rigorous as possible, the Eclipse Arrowhead project provides the _Certificate Authority_ system, which, through some other helper systems, provides an infrastructure for managing certificate life-cycles within local clouds.
+We _recommend_ that the system be used for all Eclipse Arrowhead installations, whenever possible.
+
+There are, however, certificate profiles that fall outside the scope of the local cloud.
+Furthermore, there may be contexts in which using a Certificate Authority is unfeasible.
+In such cases, we _recommend_ that the following be observed:
+
+1. Each private key _should_ be created on the device that will use it and no copies of it are ever shared with any other device, system or other entity.
+    - This means that CSRs _should_ be used for every certificate issuance. CSRs can be created and handled both automatically and manually.
+    - As an exception, if a created certificate is a Master or Organization certificate, we _recommend_ that backups be kept such that key data, including private keys, are not lost in the case of hardware failure or other adversarial conditions. Such backups _should_ be guarded with outmost care.
+2. Private keys _should_ be stored in hardware memory that is designed to resist tampering and key theft.
+    - This could, for example, be achieved by using Trusted Platform Modules (TPMs), also known as ISO/IEC 11889.
+3. If there is any suspicion about a private key being compromised, the corresponding certificate _should_ be revoked and replaced as soon as possible.
+4. Provisions _should_ be in place for ensuring that no relevant certificate chains contains revoked certificates.
+    - If a managed entity has a revoked certificate in its certificate chain, the chain _should_ be replaced with a valid such as soon as possible.
+    - If an external entity has a revoked certificate in its certificate chain, it _should not_ be interacted with.
+
+The above list is _not_ to be considered as being exhaustive.
+Adhering to it is not a substitute for consulting independent and credible security experts about every specific use case scenario.
+The list is likely to be revised in the future as more core systems are introduced by the Eclipse Arrowhead project.
 
 ## 5. Authentication and Authorization
 
