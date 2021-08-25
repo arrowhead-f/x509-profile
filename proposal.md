@@ -36,6 +36,8 @@ Certificate standard for establishing trust between devices over untrusted compu
 - __Certificate Signing Request (CSR)__: A request for a certificate to be issued by a receiving CA.
 - __End Entity__: Entity having but not issuing certificates.
 - __Entity__: Any thing or being potentially able to hold and use an X.509 certificate.
+- __Fingerprint__: The hash of the DER form of an X.509 certificate, produced using a cryptographic _hash algorithm_.
+- __Hash Algorithm__: A function that produces an arbitrary fixed-size output for any given arbitrarily sized input. The same input always produces the same output.
 - __Intermediary CA__: CA that _did not_ issue its own certificate and, therefore, can be trusted by explicitly trusting another certificate further up its issuance hierarchy.
 - __Issuer__: The CA that signed a given certificate.
 - __Public Key Infrastructure (PKI)__: The structure of entities, each having a certain role, required to facilitate secure certificate distribution.
@@ -226,13 +228,31 @@ See RFC 5280 Section 4.1.2.4 for more attributes that _should_ be supported.
 | Serial Number                | `SN`         | `2.5.4.5`
 | State or Province Name       | `ST`         | `2.5.4.8`
 
-Every certificate _must_ contain exactly one `subject` _Distinguished Name Qualifier_ (`DN`) that identifies the profile it adheres to.
-The actual identifiers are stated in Sections 2.2 to 2.9.
+Every certificate _must_ contain at least one `subject` _Distinguished Name Qualifier_ (`DN`).
+It _should_ only contain one.
+The rightmost (i.e. least significant) such identifies the profile of the certificate.
+The identifiers are as follows:
 
-In addition, each certificate _must_ contain exactly one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
-Note that DNS labels _must not_ contain dots, or any other character than the alphanumeric and dash.
-While names _may_ use 62 characters, we _recommend_ that names be kept at 20 characters or less.
+| X.509 Profile | Distinguished Name Qualifier (`DN`) |
+|:--------------|:------------------------------------|
+| Master        | `ma`
+| Gate          | `ga`
+| Organization  | `or`
+| Local Cloud   | `lo`
+| On-Boarding   | `on`
+| Device        | `de`
+| System        | `sy`
+| Operator      | `op`
+
+In addition, each certificate _must_ contain at least one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
+It _should_ only contain one.
+The rightmost (i.e. least significant) such contains the human name of the certificate.
+While names _may_ use 62 characters, we _recommend_ that the name be a 10 to 20 character long lowercase identifier, such as `51e41vjoxq`, produced with a secure random number generator.
+Randomized identifiers hide details that otherwise would become accessible to adversaries with certificate copies, such as how many certificates have been issued, the type of machines they are associated with, and so on.
 The `CN` field value _must_, furthermore, be unique among all certificates issued by the same CA with same Distinguished Name Qualifier (`DN`).
+It _should not_ be derived from a portion of the `serialNumber` of the same certificate.
+The `CN` is meant to help humans refer to specific certificate owners, they _should not_ be used as primary references by machines.
+See Section 4 for a discussion about machine certificate references.
 
 #### 2.1.7 `subjectPublicKeyInfo`
 
@@ -466,8 +486,8 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
-| DN Qualifier (DN) | `2.5.4.46` | `master`.
-| Common Name (CN)  | `2.5.4.3`  |  A valid DNS name label, such as `ltu-rsa-2021`.
+| DN Qualifier (DN) | `2.5.4.46` | `ma`
+| Common Name (CN)  | `2.5.4.3`  |  Randomized identifier. See Section 2.1.6.
 
 #### 2.2.3 `extensions`
 
@@ -503,8 +523,8 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
-| DN Qualifier (DN) | `2.5.4.46` | `gate`.
-| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label, such as `mqtt-04`. See Section 2.1.6.
+| DN Qualifier (DN) | `2.5.4.46` | `ga`
+| Common Name (CN)  | `2.5.4.3`  | Randomized identifier. See Section 2.1.6.
 
 #### 2.3.3 `extensions`
 
@@ -532,8 +552,8 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
-| DN Qualifier (DN) | `2.5.4.46` | `organization`.
-| Common Name (CN)  | `2.5.4.3`  |  A valid DNS name label, such as `company-rsa-2021`.
+| DN Qualifier (DN) | `2.5.4.46` | `or`
+| Common Name (CN)  | `2.5.4.3`  |  Randomized identifier. See Section 2.1.6.
 
 #### 2.4.3 `extensions`
 
@@ -568,8 +588,8 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
-| DN Qualifier (DN) | `2.5.4.46` | `localcloud`.
-| Common Name (CN)  | `2.5.4.3`  |  A valid DNS name label, such as `pumping-station-04`.
+| DN Qualifier (DN) | `2.5.4.46` | `lo`.
+| Common Name (CN)  | `2.5.4.3`  |  Randomized identifier. See Section 2.1.6.
 
 #### 2.4.3 `extensions`
 
@@ -606,11 +626,8 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
-| DN Qualifier (DN) | `2.5.4.46` | `onboarding`.
-| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label. See Section 2.1.6. _Should_ be an at lest 12 character long lowercase alphanumeric identifier, such as `51e41vjoxq8y`, created with a secure random number generator.*
-
-* Given an alphabet of 36 characters (a-z and 0-9), a 12 character identifier provides a search space of close to that of a 62-bit number.
-  In many contexts, this will be enough to hide the number of on-boarding certificates that have been issued by the same local cloud from an adversary with a copy of the certificate.
+| DN Qualifier (DN) | `2.5.4.46` | `on`.
+| Common Name (CN)  | `2.5.4.3`  | Randomized identifier. See Section 2.1.6.
 
 #### 2.3.3 `extensions`
 
@@ -640,8 +657,8 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
-| DN Qualifier (DN) | `2.5.4.46` | `device`.
-| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label, such as `srv-1642`. See Section 2.1.6.
+| DN Qualifier (DN) | `2.5.4.46` | `de`
+| Common Name (CN)  | `2.5.4.3`  | Randomized identifier. See Section 2.1.6.
 
 #### 2.3.3 `extensions`
 
@@ -669,8 +686,8 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
-| DN Qualifier (DN) | `2.5.4.46` | `system`.
-| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label, such as `orch-0037`. See Section 2.1.6.
+| DN Qualifier (DN) | `2.5.4.46` | `sy`
+| Common Name (CN)  | `2.5.4.3`  | Randomized identifier. See Section 2.1.6.
 
 #### 2.3.3 `extensions`
 
@@ -698,8 +715,8 @@ The subject field DN _must_ contain the following attributes exactly once, eithe
 
 | Attribute Type    | OID        | Value |
 |:------------------|:-----------|:------|
-| DN Qualifier (DN) | `2.5.4.46` | `operator`.
-| Common Name (CN)  | `2.5.4.3`  | A valid DNS name label, such as `15-b32-a`. See Section 2.1.6.
+| DN Qualifier (DN) | `2.5.4.46` | `op`
+| Common Name (CN)  | `2.5.4.3`  | Randomized identifier. See Section 2.1.6.
 
 #### 2.3.3 `extensions`
 
@@ -731,43 +748,53 @@ The above recommendations are _general_, in the sense that no particular assumpt
 We understand that many Arrowhead installations will involve hardware with limited computational capabilities, which may not be able to handle primitives of the cryptographic strengths we have mentioned.
 The Eclipse Arrowhead project will publish summaries of recommendations for such and other settings in the future.
 
-## 4. Certificate Life-Cycle Management
+## 4. Identifying Certificates and Their Owners
+
+The X.509 profiles of this document provide two fields and one extension whose values could be used to identify a particular certificate or its owner.
+These are the the `serialNumber` and `subject` fields, as well as the `Subject Key Identifier` extension.
+Despite this, they _must not_ be used by machines referring to certificates.
+The reason for this is that they are all set arbitrarily by the creator of each certificate.
+An adversary with a given certificate could create another certificate with the same values, allowing it to masquerade as the owner of the original certificate without knowledge of its private key.
+
+What _should_ be used, rather, is either (1) the cryptographic hash of an entire certificate in DER form (i.e. its fingerprint) or (2) the cryptographic hash of its `subjectPublicKey` value (excluding the tag, length, and number of unused bits) of the `subjectPublicKeyInfo` field, also in its DER form.
+While the second of these two identifiers will be equal to the `Subject Key Identifier` for a conformant certificate, it _should not_ be generally assumed that a given certificate is conformant.
+Both of these hashes include the public key of the certificate owner, which means that it becomes harder for an adversary to create a counterfeit certificate.
+We _recommend_ that the certificate hash (fingerprint) be generally used as identifier, as it protects the integrity of the entire certificate as opposed to only one field of it.
+See Section 3 for details about what hash algorithms to use.
+
+## 5. Certificate Life-Cycle Management
 
 Certificates must be created, distributed, replaced as they expire and, sometimes, revoked before they expire.
 If these tasks are handled without care, it can lead to serious security vulnerabilities.
-To help making this handling as rigorous as possible, the Eclipse Arrowhead project provides the _Certificate Authority_ system, which, through some other helper systems, provides an infrastructure for managing certificate life-cycles within local clouds.
+To help making this handling as rigorous as possible, the Eclipse Arrowhead project provides the _Certificate Authority_ system, which, through some other helper systems, provides an infrastructure for managing the certificate life-cycle within a local clouds.
 We _recommend_ that the system be used for all Eclipse Arrowhead installations, whenever possible.
 
-There are, however, certificate profiles that fall outside the scope of the local cloud.
-Furthermore, there may be contexts in which using a Certificate Authority is unfeasible.
-In such cases, we _recommend_ that the following be observed:
+Generally, when certificate life-cycles are managed, we _recommend_ that the following be observed:
 
-1. Each private key _should_ be created on the device that will use it and no copies of it are ever shared with any other device, system or other entity.
-    - This means that CSRs _should_ be used for every certificate issuance. CSRs can be created and handled both automatically and manually.
-    - As an exception, if a created certificate is a Master or Organization certificate, we _recommend_ that backups be kept such that key data, including private keys, are not lost in the case of hardware failure or other adversarial conditions. Such backups _should_ be guarded with outmost care.
-2. Private keys _should_ be stored in hardware memory that is designed to resist tampering and key theft.
-    - This could, for example, be achieved by using Trusted Platform Modules (TPMs), also known as ISO/IEC 11889.
-3. If there is any suspicion about a private key being compromised, the corresponding certificate _should_ be revoked and replaced as soon as possible.
-4. Provisions _should_ be in place for ensuring that no relevant certificate chains contains revoked certificates.
-    - If a managed entity has a revoked certificate in its certificate chain, the chain _should_ be replaced with a valid such as soon as possible.
-    - If an external entity has a revoked certificate in its certificate chain, it _should not_ be interacted with.
+1. Create each private key on the device that will use it.
+2. Use CSRs to avoid moving private keys between devices during certificate issuance.
+3. Never make backups or other copies of private keys that can be trivially replaced.
+4. Store backups of sensitive private keys offline, if possible.
+5. Store active private keys in secure hardware elements, such as TPMs (ISO/IEC 11889).
+6. Immediately revoke owned certificates whose private keys are suspected to be compromised.
+7. Actively look for and act on revocations in the certificate chains of counter-parties.
 
 The above list is _not_ to be considered as being exhaustive.
-Adhering to it is not a substitute for consulting independent and credible security experts about every specific use case scenario.
-The list is likely to be revised in the future as more core systems are introduced by the Eclipse Arrowhead project.
+Adhering to it is not a substitute for consulting independent and credible security experts.
+The list is likely to be revised as more experience is gained related to the security of Arrowhead installations.
 
-## 5. Authentication and Authorization
+## 6. Authentication and Authorization
 
 __Precedence__.
 Being _hierarchical_, a DN describes a path from some arbitrary root to the subject or issuer in question, where the root is the leftmost RDN and the subject or issuer is the rightmost.
 The root does not have to be associated with the root CA of the certificate in question.
 While the above listed attributes _should not_ appear more than once in a subject or issuer DN, if they do, the rightmost takes precedence during the authorization procedure described in Section 6.
 
-## 6. DNS Support and its Security Implications
+## 7. DNS Support and its Security Implications
 
-## 7. Known Limitations
+## 8. Known Limitations
 
-### 7.1 Subject Alternative Names and Device Mobility
+### 8.1 Subject Alternative Names and Device Mobility
 
 Devices and systems are assumed not to change IP addresses or DNS names during their lifetimes, as these are recorded in their certificates.
 This makes it a bit more challenging when devices need to move between networks and, as a consequence, may be assigned new IP addresses.
