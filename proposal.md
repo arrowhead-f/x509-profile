@@ -63,10 +63,10 @@ The standard is used to describe the structure of X.509 certificates, which _mus
 - __Object Identifier (OID)__: A hierarchical and universally unique identifier, useful for identifying parts of ASN.1 messages.
 - __Octet__: An 8-bit byte.
 
-#### 1.2.5 TLS
+#### 1.2.5 TLS and DTLS
 
-_Transport Layer Security_ (TLS), an IETF (Internet Engineering Task-Force) standard for establishing secure connection over untrusted transports.
-Used in tandem with X.509 to establish that the identities of any connecting parties can be authenticated.
+_Transport Layer Security_ (TLS) and _Datagram Transport Layer Security_ (DTLS) are IETF (Internet Engineering Task-Force) standards for establishing secure connections over untrusted transports.
+Can leverage X.509 to perform authentication.
 
 - __Authentication Algorithm__: An asymmetric, or _public key_, encryption algorithm used to establish a degree of confidence in the identity of a peer.
 - __Cipher Suite__: A four-part set consisting of a _key exchange_, _authentication_, _encryption_ and _hash_ algorithm. Such a suite must be agreed upon for a TLS connection to be possible to establish. The _authentication_ and _hash_ algorithms form a _signature suite_.
@@ -796,29 +796,29 @@ The above list is _not_ to be considered as being exhaustive.
 Adhering to it is not a substitute for consulting independent and credible security experts.
 The list is likely to be revised as more experience is gained related to the security of Arrowhead installations.
 
-## 6. TLS Authentication and Authorization
+## 6. TLS/DTLS Authentication and Authorization
 
-By default, the initiator of a given TLS connection, or _client_, validates the certificates of its peer, or _server_, but not vice versa.
-In the context of Arrowhead, it will rarely, if ever, be relevant to only have one peer present its certificates.
-For this reason, the `post_handshake_auth` extension (RFC 8446, Section 4.6.2) of TLS _must_ always be enabled, which forces both peers to present certificate chains that contain a root CA trusted by the other peer.
-A server receiving a TLS _Client Hello_ message (RFC 8446, Section 4.1.2) without the `post_handshake_auth` extension specified _must_ abort the connection.
-It _should_ send a `certificate_required` alert as part of the abortion procedure (RFC 8446, Section 6.2).
-Use of the `post_handshake_auth` extension is referred to as _client-side authentication_ by many software libraries and applications.
+TODO: Finish this ...
 
-After completing the RFC 5280 validation procedure, the following must hold for each certificate in the chain presented by a given peer:
+By default, the initiator of a TLS or DTLS session validates the certificate chain of its peer, but not vice versa.
+In the context of Arrowhead, however, authentication _must_ always be mutual when Arrowhead-compliant peers communicate.
+This is facilitated by using the `post_handshake_auth` extension (RFC 8446, Section 4.6.2), which requires each of the two peers to present certificate chains that contain a root CA trusted by the other peer.
+More specifically, if a peer receives a _Client Hello_ message (RFC 8446, Section 4.1.2) without the `post_handshake_auth` extension specified, it _must_ abort the connection with a `certificate_required` alert (RFC 8446, Section 6.2).
+Use of the `post_handshake_auth` extension is referred to as _client-side authentication_ by many software libraries and applications, as the initiator, or _client_, is also authenticated by the respondent, or _server_.
 
-1. At lest one `subject` Distinguished Name Qualifier (`DN`) must be present.
-2. The value of the rightmost (i.e. least significant) `DN` must be equal to an Arrowhead certificate profile identifier specified in Section 2.1.6.
-3. At least one `subject` Common Name (`CN`) must be present.
-4. The value of the rightmost (i.e. least significant) `CN` must be a valid DNS label of between 1 and 62 DNS characters, as specified in Section 2.1.6.
-5. If the certificate is at the bottom of the certificate chain, which means that it belongs to the peer, the _Subject Alternative Name_ extension must be present.
-6. If the _Subject Alternative Name_ extension is present, it must identify the transport identity (i.e. IP address, DNS name, etc.) of the peer. See Section 2.1.9.4.
-7. If the rightmost `DN` of a given certificate is equal to
-    1. `on`, `de`, `sy` or `op`, its issuer must be a Local Cloud certificate,
-    2. `lo`, its issuer must be an Organization certificate, or
-    3. `or` or `ga`, its issuer must be a Master certificate.
+If an Arrowhead Master certificate is the trust anchor of both peers, the authentication procedure is done at this point.
+If, however, the Master certificate is an intermediate CA, the following steps must be executed to ensure that the peer is A
 
-Given that the above points are satisfied, the certificate is considered as an Arrowhead certificate.
+1. Is at lest one `subject` Distinguished Name Qualifier (`DN`) present?
+2. If (1), is the value of the rightmost (i.e. least significant) `DN` be equal to an Arrowhead certificate profile identifier specified in Section 2.1.6?
+3. Is at least one `subject` Common Name (`CN`) present?
+4. If (3), is the value of the rightmost (i.e. least significant) `CN` a valid DNS label of between 1 and 62 DNS characters, as specified in Section 2.1.6?
+5. If the certificate is at the bottom of the certificate chain, which means that it belongs to the peer, is the _Subject Alternative Name_ extension present?
+6. If (5), is the _Subject Alternative Name_ extension identifying the transport identity (i.e. IP address, DNS name, etc.) of the peer, as described in Section 2.1.9.4?
+
+If the above points are satisfied, the certificate is considered as an Arrowhead certificate, the profile of which is determined by the `DN` value.
+The certificate at the bottom of the presented certificate chain _must_ be an Arrowhead certificate.
+
 If a given Master certificate is not self-signed, any certificates above it do not have to be Arrowhead certificates, which means that they do not need to satisfy the above points.
 
 If the above points are not satisfied, the connection _must_ be immediately aborted.
