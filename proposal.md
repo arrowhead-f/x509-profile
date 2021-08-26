@@ -68,15 +68,15 @@ The standard is used to describe the structure of X.509 certificates, which _mus
 _Transport Layer Security_ (TLS), an IETF (Internet Engineering Task-Force) standard for establishing secure connection over untrusted transports.
 Used in tandem with X.509 to establish that the identities of any connecting parties can be authenticated.
 
-- __Authentication Algorithm__: An asymmetric, or _public key_, encryption algorithm used to establish a degree of confidence in the identity of a counter-party.
+- __Authentication Algorithm__: An asymmetric, or _public key_, encryption algorithm used to establish a degree of confidence in the identity of a peer.
 - __Cipher Suite__: A four-part set consisting of a _key exchange_, _authentication_, _encryption_ and _hash_ algorithm. Such a suite must be agreed upon for a TLS connection to be possible to establish. The _authentication_ and _hash_ algorithms form a _signature suite_.
 - __Encryption Algorithm__: A symmetric encryption algorithm, typically used to make data opaque in transit between a sender and a recipient. Can also be referred to as a _stream_ or _block_ cipher, depending on its mode of operation.
 - __Key Exchange Algorithm__: An algorithm used by parties for exchanging _public keys_ as part of preparing for secure communication.
 - __Hash Algorithm__: A function that produces an arbitrary fixed-size output for any given arbitrarily sized input. The same input always produces the same output. Used to reduce the size of public key signatures, among other things.
-- __Party__: Either end of a two-way communication.
+- __Peer__: Either end of a two-way communication.
 - __Public key__: The public component of a public/private key pair. Knowledge of the public key allows for messages to be encrypted such that only the possessor of the private key can decrypt them, and vice versa. Used to produce _signatures_ and to _share secrets_.
-- __Shared Secret__: The input to an _encryption algorithm_ that has been shared between two parties such that no other party can see it.
-- __Signature__: The private key encryption of a hashed object, which most significantly can be an X.509 certificate. Any party with the corresponding public key, hashing algorithm and hashed object can verify that the signature was created by the possessor of the private key and that the object has not been tampered with.
+- __Shared Secret__: The input to an _encryption algorithm_ that has been secretly shared between two parties.
+- __Signature__: The private key encryption of a hashed object, which most significantly can be an X.509 certificate. Knowledge of the corresponding public key, hashing algorithm and hashed object can is sufficient to verify that the signature was created by the possessor of the private key and that the object has not been tampered with.
 - __Signature Suite__: A two-part set consisting of an _authentication_ and _hash_ algorithm. Used to produce and validate _signatures_. Can be a subset of a _cipher suite_.
 
 ### 1.3 Conventions
@@ -230,6 +230,7 @@ See RFC 5280 Section 4.1.2.4 for more attributes that _should_ be supported.
 
 Every certificate _must_ contain at least one `subject` _Distinguished Name Qualifier_ (`DN`).
 It _should_ only contain one.
+It _should_ be encoded as a `PrintableString`.
 The rightmost (i.e. least significant) such identifies the profile of the certificate.
 The identifiers are as follows:
 
@@ -246,6 +247,7 @@ The identifiers are as follows:
 
 In addition, each certificate _must_ contain at least one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
 It _should_ only contain one `CN`.
+It _should_ be encoded as a `PrintableString`.
 The rightmost (i.e. least significant) such contains the name, or _alias_, meant to be used by humans when referring to the certificate.
 While names _may_ use up to 62 characters, we _recommend_ the use of 10 to 20 character long lowercase identifiers, such as `51e41vjoxq`, produced with secure random number generators.
 Randomized identifiers hide details that otherwise would become accessible to adversaries with certificate copies, such as how many certificates have been issued, the type of machines they are associated with, and so on.
@@ -743,15 +745,16 @@ We _recommend_ that credible information security institutes, such as NIST, ENSI
 
 Given that no relevant breakthroughs are made or expected in quantum computing, you _may_ chose to follow RFC 7525, which recommends the following four TLS cipher suites:
 
-| Key Exchange | Authentication     | Encryption  | Hash   |
-|:-------------|:-------------------|:------------|:-------|
-| DHE          | RSA (2048 or 3072) | AES 128 GCM | SHA256 |
-| ECDHE        | RSA (2048 or 3072) | AES 128 GCM | SHA256 |
-| DHE          | RSA (2048 or 3072) | AES 256 GCM | SHA384 |
-| ECDHE        | RSA (2048 or 3072) | AES 256 GCM | SHA384 |
+| Key Exchange | Authentication             | Encryption  | Hash   |
+|:-------------|:---------------------------|:------------|:-------|
+| DHE          | RSA (2048-bit or 3072-bit) | AES 128 GCM | SHA256 |
+| ECDHE        | RSA (2048-bit or 3072-bit) | AES 128 GCM | SHA256 |
+| DHE          | RSA (2048-bit or 3072-bit) | AES 256 GCM | SHA384 |
+| ECDHE        | RSA (2048-bit or 3072-bit) | AES 256 GCM | SHA384 |
 
+Only the first of the above cipher suites is required to be supported by all TLS 1.3 implementations (RFC 8446, Section 9.1).
 Each cipher suite includes a signature suite (the _Authentication_ and _Hash_ fields).
-Adhering to RFC 7525 means that RSA (2048-bit or 3072-bit) with SHA256 or SHA384 is used to sign certificates.
+Adherence to RFC 7525 means that RSA (2048-bit or 3072-bit) with SHA256 or SHA384 is used to sign certificates.
 Given that RFC 7525 is trusted, SHA256 and SHA384 _may_ be suitable choices for producing certificate identifiers, as discussed in Section 4.
 
 The above recommendations are _general_, in the sense that no particular assumptions are made about the setting in which the device employing the signature or cipher suite is located.
@@ -794,6 +797,35 @@ Adhering to it is not a substitute for consulting independent and credible secur
 The list is likely to be revised as more experience is gained related to the security of Arrowhead installations.
 
 ## 6. TLS Authentication and Authorization
+
+By default, the initiator of a given TLS connection, or _client_, validates the certificates of its peer, or _server_, but not vice versa.
+In the context of Arrowhead, it will rarely, if ever, be relevant to only have one peer present its certificates.
+For this reason, the `post_handshake_auth` extension (RFC 8446, Section 4.6.2) of TLS _must_ always be enabled, which forces both peers to present certificate chains that contain a root CA trusted by the other peer.
+A server receiving a TLS _Client Hello_ message (RFC 8446, Section 4.1.2) without the `post_handshake_auth` extension specified _must_ abort the connection.
+It _should_ send a `certificate_required` alert as part of the abortion procedure (RFC 8446, Section 6.2).
+Use of the `post_handshake_auth` extension is referred to as _client-side authentication_ by many software libraries and applications.
+
+After completing the RFC 5280 validation procedure, the following must hold for each certificate in the chain presented by a given peer:
+
+1. At lest one `subject` Distinguished Name Qualifier (`DN`) must be present.
+2. The value of the rightmost (i.e. least significant) `DN` must be equal to an Arrowhead certificate profile identifier specified in Section 2.1.6.
+3. At least one `subject` Common Name (`CN`) must be present.
+4. The value of the rightmost (i.e. least significant) `CN` must be a valid DNS label of between 1 and 62 DNS characters, as specified in Section 2.1.6.
+5. If the certificate is at the bottom of the certificate chain, which means that it belongs to the peer, the _Subject Alternative Name_ extension must be present.
+6. If the _Subject Alternative Name_ extension is present, it must identify the transport identity (i.e. IP address, DNS name, etc.) of the peer. See Section 2.1.9.4.
+7. If the rightmost `DN` of a given certificate is equal to
+    1. `on`, `de`, `sy` or `op`, its issuer must be a Local Cloud certificate,
+    2. `lo`, its issuer must be an Organization certificate, or
+    3. `or` or `ga`, its issuer must be a Master certificate.
+
+Given that the above points are satisfied, the certificate is considered as an Arrowhead certificate.
+If a given Master certificate is not self-signed, any certificates above it do not have to be Arrowhead certificates, which means that they do not need to satisfy the above points.
+
+If the above points are not satisfied, the connection _must_ be immediately aborted.
+An `access_denied` alert _should_ be sent as part of the abortion procedure.
+
+Peers _may_ use details extracted from this procedure as input to further authorization procedures.
+An example of such a procedure could be to only allow operators part of the same cloud to connect to a the service provided by a certain system.
 
 ## 7. DNS Support and its Security Implications
 
