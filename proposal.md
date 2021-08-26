@@ -245,13 +245,14 @@ The identifiers are as follows:
 | Operator      | `op`
 
 In addition, each certificate _must_ contain at least one `subject` _Common Name_ (`CN`) that is a valid DNS label (https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1) of no more than 62 characters.
-It _should_ only contain one.
-The rightmost (i.e. least significant) such contains the human name of the certificate.
-While names _may_ use 62 characters, we _recommend_ that the name be a 10 to 20 character long lowercase identifier, such as `51e41vjoxq`, produced with a secure random number generator.
+It _should_ only contain one `CN`.
+The rightmost (i.e. least significant) such contains the name, or _alias_, meant to be used by humans when referring to the certificate.
+While names _may_ use up to 62 characters, we _recommend_ the use of 10 to 20 character long lowercase identifiers, such as `51e41vjoxq`, produced with secure random number generators.
 Randomized identifiers hide details that otherwise would become accessible to adversaries with certificate copies, such as how many certificates have been issued, the type of machines they are associated with, and so on.
 The `CN` field value _must_, furthermore, be unique among all certificates issued by the same CA with same Distinguished Name Qualifier (`DN`).
 It _should not_ be derived from a portion of the `serialNumber` of the same certificate.
-The `CN` is meant to help humans refer to specific certificate owners, they _should not_ be used as primary references by machines.
+
+The `CN` is meant to help humans refer to specific certificates, they _should not_ be used as primary references by machines.
 See Section 4 for a discussion about machine certificate references.
 
 #### 2.1.7 `subjectPublicKeyInfo`
@@ -273,9 +274,7 @@ See Section 3 for information about selecting cryptographic algorithms.
 Optional identifiers uniquely associated with the issuer or subject of the certificate.
 
 These fields _must not_ be used.
-When a certain certificate, or its subject, needs to be identified, the cryptographic hash of the certificate, or its _fingerprint_, _should_ be used.
-If desired to identify the subject by its public key, which _may_ be used in multiple certificates, the cryptographic hash of the `subjectPublicKey` field (excluding the tag, length, and number of unused bits) of `subjectPublicKeyInfo` _should_ be used.
-See Section 3 for more information about what hashing algorithms should be used for this and other purposes.
+See Section 4 for a discussion about certificate identification.
 
 #### 2.1.9 `extensions`
 
@@ -331,8 +330,8 @@ The extensions are defined as follows:
 -- Required for all but self-signed CA certificates (root CAs).
 AuthorityKeyIdentifier ::= SEQUENCE {
     keyIdentifier             [0] KeyIdentifier           OPTIONAL, -- Required.
-    authorityCertIssuer       [1] GeneralNames            OPTIONAL, -- Optional.
-    authorityCertSerialNumber [2] CertificateSerialNumber OPTIONAL  -- Optional.
+    authorityCertIssuer       [1] GeneralNames            OPTIONAL, -- Should not be used.
+    authorityCertSerialNumber [2] CertificateSerialNumber OPTIONAL  -- Should not be used.
 }
 
 -- Required for all but end entity certificates.
@@ -347,6 +346,7 @@ Use of the `authorityCertIssuer` and `authorityCertSerialNumber` fields of `Auth
 If a self-signed certificate leaves the `authorityCertIssuer` and `authorityCertSerialNumber` fields unspecified, it may omit the `AuthorityKeyIdentifier` extension entirely.
 RFC 5280 further _requires_ that all but end entity certificates use the `SubjectKeyIdentifier` extension.
 Its value _should_ be the the cryptographic hash of the `subjectPublicKey` value (excluding the tag, length, and number of unused bits) of the `subjectPublicKeyInfo` field.
+See Section 3 for a discussion about what hash algorithms to use.
 The extensions _must not_ be marked as critical.
 
 #### 2.1.9.2 Key Usage Extensions
@@ -371,7 +371,7 @@ ExtKeyUsageSyntax ::= SEQUENCE SIZE (1..MAX) OF KeyPurposeId
 KeyPurposeId ::= OBJECT IDENTIFIER
 ```
 
-The `KeyUsage` extension is a set of bit flags used to indicate various ways in which a certificate _may_ be used.
+The `KeyUsage` extension is a set of bit flags indicating various ways in which a certificate _must_ only be used.
 Please refer to RFC 5280 Section 4.2.1.3 for descriptions of each bit flag.
 The extension _must_ be used in all certificates and _must_ be marked as critical.
 How to set it is outlined in the section specific to each particular certificate profile.
@@ -385,7 +385,7 @@ Other purpose identifiers _may_ be used.
 
 #### 2.1.9.3 Policy Extensions
 
-In the context of X.509 and RFC 5280, a _policy_ is a legal document that binds the owner of a certificate and, potentially, all certificates issued by that certificate to certain legal obligations.
+In the context of X.509 and RFC 5280, a _policy_ is a legal document that binds the owner of a certificate, and, potentially, all certificates issued by that certificate, to certain legal obligations.
 The four policy extensions defined by RFC 5280 _may_ be used to ensure that every certificate in a given certificate chain have accepted some policies of concern.
 Please refer to RFC 5280 for more details about these extensions.
 
@@ -415,20 +415,26 @@ GeneralName ::= CHOICE {
 }
 ```
 
-The `SubjectAltName` extension _must_ be used by all end entity certificates and _must_ identify at least one DNS name or IP address.
+The `SubjectAltName` extension _must_ be used by all end entity certificates and _must_ identify at least one DNS name, IP address or other relevant identifier useful for contacting the certificate owner.
 The extension _must_ also be used for CA certificates that handles CSRs directly via network application interfaces.
-Use of the `IssuerAltName` is _optional_.
+Use of the `IssuerAltName` is _not recommended_.
 Both extensions _should_ be marked as non-critical.
 
+__Security recommendation__.
+All names appearing in a `SubjectAltName` extension _should_ be randomized, by which we mean that every name is formulated such that an adversary can derive as little information as possible from it.
+In the case of an IP address, this means that a larger address space is preferred (e.g. 10.0.0.0/8 rather than 192.168.0.0/16) and that addresses are assigned randomly rather than sequentially.
+In the case of DNS names, this means that no serially assigned identifiers are used and that no human-readable descriptors of sensitive places or things are part of the name.
+See Section 7 for a discussion about the use of DNS in the context of Arrowhead.
+
 The __Name Constraints__ extension makes it possible for a CA to restrict the set of values allowed for the `subject` and `SubjectAltName` fields in issued certificates.
-The extension _may_ be used.
+The extension _should not_ be used.
 It _must_ be marked as critical if used.
 Please refer to RFC 5280 Section 4.2.1.10 for more details.
 
 #### 2.1.9.5 CRL Extensions
 
 The CRL extensions facilitate a mechanism for revoking certificates that are still valid and distributing information about those revocations.
-These extensions _should not_ be used to facilitate the revocation of on-On-Boarding, Device, System and Operator certificates.
+These extensions _should not_ be used to facilitate the revocation of On-Boarding, Device, System and Operator certificates.
 They _may_ be used for revoking certificates of the other profiles.
 
 Eclipse Arrowhead comes with its own certificate revocation procedure via its _Certificate Authority_ system.
@@ -436,7 +442,7 @@ Its use is _recommended_ for revoking and verifying the validity of On-Boarding,
 
 #### 2.1.9.6 Information Extensions
 
-The information extensions allows various types of data sources or services to be associated with the certificate holder.
+The information extensions allows for various types of data sources or services to be associated with the certificate holder.
 These extensions _should not_ be used.
 
 Eclipse Arrowhead has its own provisions for metadata distribution and service management, via the _Service Registry_ system, _Gatekeeper_ system, and other.
@@ -732,7 +738,7 @@ The following extensions _must_ be used and configured as described:
 
 ## 3. Algorithms, Key Lengths and Other Security Details
 
-Choosing a signature scheme for a certificate poorly can lead to severe security vulnerabilities.
+Choosing a signature suite for a certificate poorly can lead to severe security vulnerabilities.
 We _recommend_ that credible information security institutes, such as NIST, ENSIA or IETF, be consulted for making choices about algorithms, key lengths and other relevant security details.
 
 Given that no relevant breakthroughs are made or expected in quantum computing, you _may_ chose to follow RFC 7525, which recommends the following four TLS cipher suites:
@@ -743,6 +749,10 @@ Given that no relevant breakthroughs are made or expected in quantum computing, 
 | ECDHE        | RSA (2048 or 3072) | AES 128 GCM | SHA256 |
 | DHE          | RSA (2048 or 3072) | AES 256 GCM | SHA384 |
 | ECDHE        | RSA (2048 or 3072) | AES 256 GCM | SHA384 |
+
+Each cipher suite includes a signature suite (the _Authentication_ and _Hash_ fields).
+Adhering to RFC 7525 means that RSA (2048-bit or 3072-bit) with SHA256 or SHA384 is used to sign certificates.
+Given that RFC 7525 is trusted, SHA256 and SHA384 _may_ be suitable choices for producing certificate identifiers, as discussed in Section 4.
 
 The above recommendations are _general_, in the sense that no particular assumptions are made about the setting in which the device employing the signature or cipher suite is located.
 We understand that many Arrowhead installations will involve hardware with limited computational capabilities, which may not be able to handle primitives of the cryptographic strengths we have mentioned.
@@ -756,7 +766,7 @@ Despite this, they _must not_ be used by machines referring to certificates.
 The reason for this is that they are all set arbitrarily by the creator of each certificate.
 An adversary with a given certificate could create another certificate with the same values, allowing it to masquerade as the owner of the original certificate without knowledge of its private key.
 
-What _should_ be used, rather, is either (1) the cryptographic hash of an entire certificate in DER form (i.e. its fingerprint) or (2) the cryptographic hash of its `subjectPublicKey` value (excluding the tag, length, and number of unused bits) of the `subjectPublicKeyInfo` field, also in its DER form.
+What _should_ be used, rather, is either (1) the cryptographic hash of an entire certificate in its DER form (i.e. its fingerprint) or (2) the cryptographic hash of its `subjectPublicKey` value (excluding the tag, length, and number of unused bits) of the `subjectPublicKeyInfo` field, also in its DER form.
 While the second of these two identifiers will be equal to the `Subject Key Identifier` for a conformant certificate, it _should not_ be generally assumed that a given certificate is conformant.
 Both of these hashes include the public key of the certificate owner, which means that it becomes harder for an adversary to create a counterfeit certificate.
 We _recommend_ that the certificate hash (fingerprint) be generally used as identifier, as it protects the integrity of the entire certificate as opposed to only one field of it.
@@ -767,7 +777,7 @@ See Section 3 for details about what hash algorithms to use.
 Certificates must be created, distributed, replaced as they expire and, sometimes, revoked before they expire.
 If these tasks are handled without care, it can lead to serious security vulnerabilities.
 To help making this handling as rigorous as possible, the Eclipse Arrowhead project provides the _Certificate Authority_ system, which, through some other helper systems, provides an infrastructure for managing the certificate life-cycle within a local clouds.
-We _recommend_ that the system be used for all Eclipse Arrowhead installations, whenever possible.
+We _recommend_ that the system be used, or a similarly capable replacement, for all Eclipse Arrowhead installations, whenever possible.
 
 Generally, when certificate life-cycles are managed, we _recommend_ that the following be observed:
 
@@ -783,18 +793,11 @@ The above list is _not_ to be considered as being exhaustive.
 Adhering to it is not a substitute for consulting independent and credible security experts.
 The list is likely to be revised as more experience is gained related to the security of Arrowhead installations.
 
-## 6. Authentication and Authorization
-
-__Precedence__.
-Being _hierarchical_, a DN describes a path from some arbitrary root to the subject or issuer in question, where the root is the leftmost RDN and the subject or issuer is the rightmost.
-The root does not have to be associated with the root CA of the certificate in question.
-While the above listed attributes _should not_ appear more than once in a subject or issuer DN, if they do, the rightmost takes precedence during the authorization procedure described in Section 6.
+## 6. TLS Authentication and Authorization
 
 ## 7. DNS Support and its Security Implications
 
-## 8. Known Limitations
-
-### 8.1 Subject Alternative Names and Device Mobility
+## 8. Subject Alternative Names and Device Mobility
 
 Devices and systems are assumed not to change IP addresses or DNS names during their lifetimes, as these are recorded in their certificates.
 This makes it a bit more challenging when devices need to move between networks and, as a consequence, may be assigned new IP addresses.
