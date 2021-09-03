@@ -6,11 +6,20 @@ This document specifies how X.509 certificates are to be configured, issued and 
 
 ## 1. Introduction
 
-TODO
+In this document, we describe how X.509 certificates must be configured if used in conjunction with Eclipse Arrowhead.
+X.509 is a certificate standard produced by the International Telecommunication Union - Telecommunication Standardization Sector (ITU-T) and is famously used by the TLS and DTLS protocols, the former of which is used to establish secure connections on the World Wide Web.
+In brief, an X.509 certificate represents the identity of its owner.
+It records required inputs to a secure key exchange algorithm, as well as how the identity it represents is endorsed by a hierarchy of issuers.
+In the context of Eclipse Arrowhead, X.509 certificates are used to manage what IoT devices, and other entities, are to be trusted and what cryptographic algorithms are to be used to establish their identities.
+
+The rest of this document is organized as follows.
+This section continues by listing key terminology and outlining some linguistic conventions.
+Section 2 outlines the X.509 certificate format and the 8 core Arrowhead X.509 profiles.
+Sections 3, 4, 5 and 6 consider secure algorithm inputs, certificate identification, certificate life-cycle management, and using certificates as input to authorization procedures, respectively.
 
 ### 1.1 Relation to the IETF RFC 5280 X.509 Profile
 
-All certificate profiles specified in this document are _required_ to be strict subsets of the RFC 5280 X.509 profile, which regulates the use of X.509 certificates on the World Wide Web.
+All certificate profiles specified in this document are _required_ to be strict subsets of the RFC 5280 X.509 profile of the Internet Engineering Task Force (IETF).
 
 ### 1.2 Significant Terminology
 
