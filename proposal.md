@@ -66,7 +66,7 @@ The standard is used to describe the structure of X.509 certificates, which _mus
 #### 1.2.5 TLS and DTLS
 
 _Transport Layer Security_ (TLS) and _Datagram Transport Layer Security_ (DTLS) are IETF (Internet Engineering Task-Force) standards for establishing secure connections over untrusted transports.
-Can leverage X.509 to perform authentication.
+Both can use X.509 to perform authentication when establishing secure connections.
 
 - __Authentication Algorithm__: An asymmetric, or _public key_, encryption algorithm used to establish a degree of confidence in the identity of a peer.
 - __Cipher Suite__: A four-part set consisting of a _key exchange_, _authentication_, _encryption_ and _hash_ algorithm. Such a suite must be agreed upon for a TLS connection to be possible to establish. The _authentication_ and _hash_ algorithms form a _signature suite_.
@@ -445,7 +445,7 @@ Its use is _recommended_ for revoking and verifying the validity of On-Boarding,
 #### 2.1.9.6 Information Extensions
 
 The information extensions allows for various types of data sources or services to be associated with the certificate holder.
-These extensions _should not_ be used.
+These extensions _should not_ be used, unless required by a protocol relevant for the revocation of Master, Organization, Gate and Local Cloud certificates.
 
 Eclipse Arrowhead has its own provisions for metadata distribution and service management, via the _Service Registry_ system, _Gatekeeper_ system, and other.
 Those provisions _should_ be used.
@@ -779,8 +779,8 @@ See Section 3 for details about what hash algorithms to use.
 
 Certificates must be created, distributed, replaced as they expire and, sometimes, revoked before they expire.
 If these tasks are handled without care, it can lead to serious security vulnerabilities.
-To help making this handling as rigorous as possible, the Eclipse Arrowhead project provides the _Certificate Authority_ system, which, through some other helper systems, provides an infrastructure for managing the certificate life-cycle within a local clouds.
-We _recommend_ that the system be used, or a similarly capable replacement, for all Eclipse Arrowhead installations, whenever possible.
+To help making this handling as rigorous as possible, the Eclipse Arrowhead project provides the _Certificate Authority_ system, which, through some other helper systems, provides an infrastructure for managing the certificate life-cycle within local clouds.
+We _recommend_ that the system be used, or a similarly capable replacement, for all Eclipse Arrowhead installations.
 
 Generally, when certificate life-cycles are managed, we _recommend_ that the following be observed:
 
@@ -796,46 +796,66 @@ The above list is _not_ to be considered as being exhaustive.
 Adhering to it is not a substitute for consulting independent and credible security experts.
 The list is likely to be revised as more experience is gained related to the security of Arrowhead installations.
 
-## 6. TLS/DTLS Authentication and Authorization
+## 6. Authorizing Certificate Owners
 
-TODO: Finish this ...
+While no steps in addition to those in Section 6 of RFC 5280 are mandatory for certificate _validation_, there are additional details made available by our profiles that _should_ be used for _authorization_ when applicable.
+These details are (A) profile identifiers and (B) issuer identities.
+For example, if an Arrowhead system provides a service, it _may_ be relevant to ensure that any consumer of that service belongs to the same local cloud and is an operator.
 
-By default, the initiator of a TLS or DTLS session validates the certificate chain of its peer, but not vice versa.
-In the context of Arrowhead, however, authentication _must_ always be mutual when Arrowhead-compliant peers communicate.
-This is facilitated by using the `post_handshake_auth` extension (RFC 8446, Section 4.6.2), which requires each of the two peers to present certificate chains that contain a root CA trusted by the other peer.
-More specifically, if a peer receives a _Client Hello_ message (RFC 8446, Section 4.1.2) without the `post_handshake_auth` extension specified, it _must_ abort the connection with a `certificate_required` alert (RFC 8446, Section 6.2).
-Use of the `post_handshake_auth` extension is referred to as _client-side authentication_ by many software libraries and applications, as the initiator, or _client_, is also authenticated by the respondent, or _server_.
+We _recommend_ that a procedure practically equivalent to the below algorithm, described in pseudo-code, is used when extracting certificate profile identifiers.
+The input to the algorithm is an array containing a certificate chain `chain` of a given peer.
+The certificate at index 0 of that array is owned by the peer in question, while the remaining certificates represent its issuance hierarchy, in order of issuance from least significant to most.
 
-If an Arrowhead Master certificate is the trust anchor of both peers, the authentication procedure is done at this point.
-If, however, the Master certificate is an intermediate CA, the following steps must be executed to ensure that the peer is A
+```js
+function getCertificateProfileIdentifier(chain) {
+    if (chain.length == 0) { throw "empty chain"; }
 
-1. Is at lest one `subject` Distinguished Name Qualifier (`DN`) present?
-2. If (1), is the value of the rightmost (i.e. least significant) `DN` be equal to an Arrowhead certificate profile identifier specified in Section 2.1.6?
-3. Is at least one `subject` Common Name (`CN`) present?
-4. If (3), is the value of the rightmost (i.e. least significant) `CN` a valid DNS label of between 1 and 62 DNS characters, as specified in Section 2.1.6?
-5. If the certificate is at the bottom of the certificate chain, which means that it belongs to the peer, is the _Subject Alternative Name_ extension present?
-6. If (5), is the _Subject Alternative Name_ extension identifying the transport identity (i.e. IP address, DNS name, etc.) of the peer, as described in Section 2.1.9.4?
+    let dnq = getDNQualifier(chain[0]);
+    switch (dnq) {
+        case "ma":
+            break;
+        case "or": case "ga":
+            requireProfileSequence(chain[1..], ["ma"]); break;
+        case "lo":
+            requireProfileSequence(chain[1..], ["or", "ma"]); break;
+        case "on": case "de": case "sy": case "op":
+            requireProfileSequence(chain[1..], ["lo", "or", "ma"]); break;
+        default:
+            throw "unexpected DNQualifier";
+    }
+    return dnq;
+}
 
-If the above points are satisfied, the certificate is considered as an Arrowhead certificate, the profile of which is determined by the `DN` value.
-The certificate at the bottom of the presented certificate chain _must_ be an Arrowhead certificate.
+function requireProfileSequence(chain, identifiers) {
+    if (identifiers.length == 0) { return; }
+    if (chain.length == 0) { throw "expected additional certificate(s)"; }
 
-If a given Master certificate is not self-signed, any certificates above it do not have to be Arrowhead certificates, which means that they do not need to satisfy the above points.
+    if (getDNQualifier(chain[0]) != identifiers[0]) {
+        throw "unexpected certificate profile";
+    }
 
-If the above points are not satisfied, the connection _must_ be immediately aborted.
-An `access_denied` alert _should_ be sent as part of the abortion procedure.
+    requireProfileSequence(chain[1..], identifiers[1..]);
+}
+```
 
-Peers _may_ use details extracted from this procedure as input to further authorization procedures.
-An example of such a procedure could be to only allow operators part of the same cloud to connect to a the service provided by a certain system.
+The `getDNQualifier` function is assumed to extract the `subject` `DN` field, described in Section 2.1.6, of a given certificate.
+If several such fields is present in a given certificate, the rightmost (i.e. least significant) must be returned by the function.
+The `[1..]` notation is used to describe an array being "sliced" such that a new array is produced containing all but the first element of the original array.
+The algorithm asserts that any extracted identifier appears at the expected hierarchical level, apart from extracting the identifier itself.
 
-## 7. DNS Support and its Security Implications
+Testing elements of an issuance hierarchy could be performed by comparing certificate DER representations byte by byte, or by comparing their DER hashes.
+The following pseudo-code describes how a service provider could assert that a given peer is a system belonging to a certain local cloud:
 
-## 8. Subject Alternative Names and Device Mobility
+```js
+if (getCertificateProfileIdentifier(peer.chain) != "sy" || hash(peer.chain[1]) != hashOfRelevantLocalCloudCertificate) {
+    throw "unauthorized";
+}
+```
 
-Devices and systems are assumed not to change IP addresses or DNS names during their lifetimes, as these are recorded in their certificates.
-This makes it a bit more challenging when devices need to move between networks and, as a consequence, may be assigned new IP addresses.
-However, as mobility at a scale that makes this setup a problem is currently deemed of marginal utility, no provisions are given for it directly.
-It could be working around by using proxies, negotiating a new certificate every network handover, recording all relevant IP addresses in advance in each certificate, and so on.
+Note that if either of the secure transports TLS or DTLS is used by a given Arrowhead peer, the `post_handshake_auth` extension (RFC 8446, Section 4.6.2), must be required in order for both peers of a connection to provide and validate certificates.
+The extension _should_ always be required when Arrowhead systems communicate.
+Use of the `post_handshake_auth` extension is referred to as _client authentication_ by many software libraries and applications, as the initiating peer, or _client_, is also authenticated by the responding peer, or _server_.
 
 ## References
 
-TODO
+(Will be added in the formatted (LaTeX) version of this document.)
